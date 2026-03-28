@@ -102,33 +102,50 @@ const Navigation: React.FC = () => {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-4 w-80 bg-secondary border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-50"
+                      className="absolute right-0 mt-4 w-[calc(100vw-2rem)] sm:w-96 bg-secondary border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-50 origin-top-right"
                     >
                       <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                         <h4 className="font-black uppercase tracking-tight text-sm">Notifications</h4>
                         <span className="text-[10px] bg-primary text-black px-2 py-0.5 rounded-full font-bold">{unreadNotifs} New</span>
                       </div>
-                      <div className="max-h-96 overflow-y-auto">
+                      <div className="max-h-[70vh] overflow-y-auto">
                         {notifications.length === 0 ? (
                           <div className="p-8 text-center text-white/20 italic text-sm">No notifications</div>
                         ) : (
                           notifications.sort((a, b) => b.timestamp - a.timestamp).map(notif => (
-                            <div key={notif.id} className="p-4 border-b border-white/5 hover:bg-white/5 transition-all">
+                            <div 
+                              key={notif.id} 
+                              className="p-4 border-b border-white/5 hover:bg-white/5 transition-all cursor-pointer"
+                              onClick={() => {
+                                if (notif.link) {
+                                  if (notif.actionType === 'external') {
+                                    window.open(notif.link, '_blank');
+                                  } else {
+                                    navigate(notif.link);
+                                  }
+                                }
+                                setIsNotifOpen(false);
+                              }}
+                            >
                               <div className="flex gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                                   notif.type === 'success' ? 'bg-green-500/20 text-green-500' :
                                   notif.type === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
                                   notif.type === 'alert' ? 'bg-red-500/20 text-red-500' :
                                   'bg-primary/20 text-primary'
                                 }`}>
-                                  {notif.type === 'success' ? <CheckCircle size={14} /> :
-                                   notif.type === 'warning' ? <AlertTriangle size={14} /> :
-                                   notif.type === 'alert' ? <AlertTriangle size={14} /> :
-                                   <Info size={14} />}
+                                  {notif.imageUrl ? (
+                                    <img src={notif.imageUrl} alt="" className="w-full h-full object-cover rounded-xl" />
+                                  ) : (
+                                    notif.type === 'success' ? <CheckCircle size={18} /> :
+                                    notif.type === 'warning' ? <AlertTriangle size={18} /> :
+                                    notif.type === 'alert' ? <AlertTriangle size={18} /> :
+                                    <Info size={18} />
+                                  )}
                                 </div>
-                                <div className="space-y-1">
+                                <div className="space-y-1 flex-1">
                                   <h5 className="font-bold text-xs">{notif.title}</h5>
-                                  <p className="text-[10px] text-white/50 leading-relaxed">{notif.message}</p>
+                                  <p className="text-[10px] text-white/50 leading-relaxed line-clamp-2">{notif.message}</p>
                                   <span className="text-[8px] text-white/20 font-bold uppercase tracking-widest block mt-1">
                                     {new Date(notif.timestamp).toLocaleString()}
                                   </span>

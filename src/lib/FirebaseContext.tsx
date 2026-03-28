@@ -14,6 +14,7 @@ interface FirebaseContextType {
   badges: Badge[];
   notifications: Notification[];
   chatMessages: ChatMessage[];
+  tournaments: any[];
   loading: boolean;
   isAdmin: boolean;
 }
@@ -30,6 +31,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [badges, setBadges] = useState<Badge[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [tournaments, setTournaments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -123,6 +125,13 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setChatMessages(data ? Object.values(data) : []);
     });
 
+    // Load Tournaments
+    const tournamentsRef = ref(db, 'tournaments');
+    onValue(tournamentsRef, (snapshot) => {
+      const data = snapshot.val();
+      setTournaments(data ? Object.values(data) : []);
+    });
+
     setLoading(false);
     return () => unsubscribeAuth();
   }, []);
@@ -130,7 +139,20 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const isAdmin = profile?.role === 'admin';
 
   return (
-    <FirebaseContext.Provider value={{ user, profile, config, sections, categories, fields, badges, notifications, chatMessages, loading, isAdmin }}>
+    <FirebaseContext.Provider value={{ 
+      user, 
+      profile, 
+      config, 
+      sections, 
+      categories, 
+      fields, 
+      badges, 
+      notifications, 
+      chatMessages, 
+      tournaments,
+      loading, 
+      isAdmin 
+    }}>
       {children}
     </FirebaseContext.Provider>
   );

@@ -63,6 +63,8 @@ export interface Tournament {
   customFields?: Record<string, any>;
   liveUrl?: string;
   autoplayLive?: boolean;
+  totalSlots?: number;
+  filledSlots?: number;
 }
 
 export interface Section {
@@ -106,6 +108,8 @@ export interface Notification {
   read?: boolean; // For client-side UI
   link?: string;
   icon?: string;
+  imageUrl?: string;
+  actionType?: 'tournament' | 'external' | 'none';
 }
 
 export interface GlobalConfig {
@@ -137,6 +141,8 @@ export interface Comment {
   timestamp: number;
   likes: Record<string, boolean>;
   replies?: Record<string, Comment>;
+  parentId?: string;
+  mentions?: string[]; // Array of user IDs
 }
 
 export interface Application {

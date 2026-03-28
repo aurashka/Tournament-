@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useFirebase } from '../lib/FirebaseContext';
-import { LayoutGrid, Settings, Users, Trophy, Palette, FileText, Badge as BadgeIcon, MessageSquare, Bell } from 'lucide-react';
+import { LayoutGrid, Settings, Users, Trophy, Palette, FileText, Badge as BadgeIcon, MessageSquare, Bell, Shield } from 'lucide-react';
 import { SectionManager } from './SectionManager';
 import { FieldManager } from './FieldManager';
 import { DesignManager } from './DesignManager';

@@ -38,6 +38,8 @@ export const TournamentManager: React.FC = () => {
     status: 'upcoming',
     joinSystem: 'internal',
     customFields: {},
+    totalSlots: 100,
+    filledSlots: 0,
   });
 
   useEffect(() => {
@@ -231,6 +233,26 @@ export const TournamentManager: React.FC = () => {
                   onChange={e => setFormData({ ...formData, dateTime: e.target.value })}
                   className="w-full bg-background border border-white/10 rounded-lg p-2"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Total Slots</label>
+                  <input
+                    type="number"
+                    value={formData.totalSlots}
+                    onChange={e => setFormData({ ...formData, totalSlots: parseInt(e.target.value) })}
+                    className="w-full bg-background border border-white/10 rounded-lg p-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Filled Slots</label>
+                  <input
+                    type="number"
+                    value={formData.filledSlots}
+                    onChange={e => setFormData({ ...formData, filledSlots: parseInt(e.target.value) })}
+                    className="w-full bg-background border border-white/10 rounded-lg p-2"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Categories</label>
