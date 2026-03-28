@@ -3,12 +3,25 @@ import { useFirebase } from '../lib/FirebaseContext';
 import { ref, set, push, remove, update, onValue } from 'firebase/database';
 import { db } from '../lib/firebase';
 import { Tournament } from '../types';
-import { Plus, Trash2, Edit2, Image as ImageIcon, Link as LinkIcon, Users } from 'lucide-react';
+import { Plus, Trash2, Edit2, Image as ImageIcon, Link as LinkIcon, Users, User, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { uploadImage } from '../lib/utils';
+
+interface Application {
+  id: string;
+  tournamentId: string;
+  userId: string;
+  userIgn: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  details: Record<string, string>;
+}
 
 export const TournamentManager: React.FC = () => {
   const { categories, fields } = useFirebase();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [viewingApps, setViewingApps] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Tournament>>({
@@ -33,6 +46,18 @@ export const TournamentManager: React.FC = () => {
       const data = snapshot.val();
       setTournaments(data ? Object.values(data) : []);
     });
+
+    const uRef = ref(db, 'users');
+    onValue(uRef, (snapshot) => {
+      const data = snapshot.val();
+      setUsers(data ? Object.values(data) : []);
+    });
+
+    const aRef = ref(db, 'applications');
+    onValue(aRef, (snapshot) => {
+      const data = snapshot.val();
+      setApplications(data ? Object.values(data) : []);
+    });
   }, []);
 
   const handleSave = async () => {
@@ -47,6 +72,10 @@ export const TournamentManager: React.FC = () => {
     setIsAdding(false);
     setEditingId(null);
     setFormData({ title: '', bgImage: '', logo: '', hostId: '', game: '', categories: [], entryFee: 'Free', prize: '', rules: '', dateTime: '', status: 'upcoming', joinSystem: 'internal', customFields: {} });
+  };
+
+  const handleUpdateAppStatus = async (appId: string, status: 'approved' | 'rejected') => {
+    await update(ref(db, `applications/${appId}`), { status });
   };
 
   const handleDelete = async (id: string) => {
@@ -81,13 +110,17 @@ export const TournamentManager: React.FC = () => {
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Tournament Title</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={e => setFormData({ ...formData, title: e.target.value })}
+                <label className="block text-sm font-medium mb-1">Host (Select Player)</label>
+                <select
+                  value={formData.hostId}
+                  onChange={e => setFormData({ ...formData, hostId: e.target.value })}
                   className="w-full bg-background border border-white/10 rounded-lg p-2"
-                />
+                >
+                  <option value="">Select Host</option>
+                  {users.map(u => (
+                    <option key={u.uid} value={u.uid}>{u.ign} ({u.email})</option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -234,6 +267,63 @@ export const TournamentManager: React.FC = () => {
             />
           </div>
 
+          <div className="space-y-4 border-t border-white/5 pt-4">
+            <div className="flex justify-between items-center">
+              <h4 className="text-sm font-bold uppercase tracking-widest text-primary">Custom Details (Key: Value)</h4>
+              <button 
+                onClick={() => {
+                  const custom = { ...(formData.customFields || {}) };
+                  const key = `Field ${Object.keys(custom).length + 1}`;
+                  custom[key] = '';
+                  setFormData({ ...formData, customFields: custom });
+                }}
+                className="text-xs bg-white/5 px-3 py-1 rounded-lg hover:bg-white/10"
+              >
+                + Add Detail
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(formData.customFields || {}).map(([key, value], idx) => (
+                <div key={idx} className="flex gap-2 items-center bg-white/5 p-2 rounded-lg">
+                  <input 
+                    type="text" 
+                    value={key}
+                    onChange={e => {
+                      const newKey = e.target.value;
+                      const custom = { ...formData.customFields };
+                      delete custom[key];
+                      custom[newKey] = value;
+                      setFormData({ ...formData, customFields: custom });
+                    }}
+                    className="w-1/3 bg-background border border-white/10 rounded p-1 text-xs"
+                    placeholder="Label"
+                  />
+                  <input 
+                    type="text" 
+                    value={value}
+                    onChange={e => {
+                      const custom = { ...formData.customFields };
+                      custom[key] = e.target.value;
+                      setFormData({ ...formData, customFields: custom });
+                    }}
+                    className="flex-1 bg-background border border-white/10 rounded p-1 text-xs"
+                    placeholder="Value"
+                  />
+                  <button 
+                    onClick={() => {
+                      const custom = { ...formData.customFields };
+                      delete custom[key];
+                      setFormData({ ...formData, customFields: custom });
+                    }}
+                    className="text-red-500 p-1"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="flex justify-end gap-3 pt-4">
             <button onClick={() => { setIsAdding(false); setEditingId(null); }} className="px-4 py-2 hover:bg-white/5 rounded-lg">Cancel</button>
             <button onClick={handleSave} className="btn-primary">Save Tournament</button>
@@ -253,6 +343,18 @@ export const TournamentManager: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setViewingApps(viewingApps === t.id ? null : t.id)}
+                className={`p-2 rounded-lg transition-all ${viewingApps === t.id ? 'bg-primary text-black' : 'hover:bg-white/5 text-white/50'}`}
+                title="View Applications"
+              >
+                <Users size={18} />
+                {applications.filter(a => a.tournamentId === t.id).length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-[10px] flex items-center justify-center rounded-full text-white">
+                    {applications.filter(a => a.tournamentId === t.id && a.status === 'pending').length}
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => { setEditingId(t.id); setFormData(t); }}
                 className="p-2 hover:bg-white/5 rounded-lg text-white/50 hover:text-white"
               >
@@ -265,6 +367,61 @@ export const TournamentManager: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {viewingApps && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-secondary w-full max-w-4xl max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 p-8 space-y-6">
+            <div className="flex justify-between items-center sticky top-0 bg-secondary pb-4 border-b border-white/10">
+              <h3 className="text-xl font-bold">Applications for {tournaments.find(t => t.id === viewingApps)?.title}</h3>
+              <button onClick={() => setViewingApps(null)} className="p-2 hover:bg-white/5 rounded-lg"><XCircle size={20} /></button>
+            </div>
+
+            <div className="space-y-4">
+              {applications.filter(a => a.tournamentId === viewingApps).length === 0 ? (
+                <p className="text-center text-white/30 py-8">No applications yet.</p>
+              ) : (
+                applications.filter(a => a.tournamentId === viewingApps).map(app => (
+                  <div key={app.id} className="bg-white/5 p-4 rounded-xl border border-white/10 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold">{app.userIgn}</h4>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          app.status === 'approved' ? 'bg-green-500' : 
+                          app.status === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'
+                        }`}>
+                          {app.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-white/50">{new Date(app.submittedAt).toLocaleString()}</p>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {Object.entries(app.details || {}).map(([k, v]) => (
+                          <div key={k} className="text-xs">
+                            <span className="text-white/40">{k}:</span> <span className="text-white/80">{v}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleUpdateAppStatus(app.id, 'approved')}
+                        className="p-2 bg-green-500/20 text-green-500 rounded-lg hover:bg-green-500 hover:text-white transition-all"
+                      >
+                        <CheckCircle size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateAppStatus(app.id, 'rejected')}
+                        className="p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                      >
+                        <XCircle size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

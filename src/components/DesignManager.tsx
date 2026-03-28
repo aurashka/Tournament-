@@ -79,6 +79,26 @@ export const DesignManager: React.FC = () => {
               </select>
             </div>
             <div>
+              <label className="block text-sm font-medium mb-1">Blur Intensity</label>
+              <input
+                type="text"
+                value={config.styles.blurIntensity}
+                onChange={e => handleStyleChange('blurIntensity', e.target.value)}
+                className="w-full bg-background border border-white/10 rounded-lg p-2"
+                placeholder="e.g. 20px"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Spacing Scale (Zoom)</label>
+              <input
+                type="text"
+                value={config.styles.spacingScale}
+                onChange={e => handleStyleChange('spacingScale', e.target.value)}
+                className="w-full bg-background border border-white/10 rounded-lg p-2"
+                placeholder="e.g. 1.2"
+              />
+            </div>
+            <div>
               <label className="block text-sm font-medium mb-1">Heading Font</label>
               <input
                 type="text"

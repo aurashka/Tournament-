@@ -68,12 +68,44 @@ export interface Tournament {
 export interface Section {
   id: string;
   title: string;
-  type: 'tournament' | 'posts' | 'custom';
+  type: 'tournament' | 'posts' | 'custom' | 'video';
   categories?: string[];
-  layout: 'grid' | 'slider' | 'list';
+  layout: 'grid' | 'slider' | 'list' | 'video-slider';
   visible: boolean;
   cardStyle: 'modern' | 'classic' | 'gaming';
   order: number;
+  videoLinks?: { id: string; title: string; url: string; thumbnail?: string }[];
+}
+
+export interface ChatMessage {
+  id: string;
+  sessionId: string;
+  senderId: string;
+  text: string;
+  timestamp: number;
+  read: boolean;
+}
+
+export interface ChatSession {
+  id: string;
+  userId: string;
+  userName?: string;
+  lastMessage: string;
+  lastTimestamp: number;
+  unreadCount: number;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'alert';
+  timestamp: number;
+  targetUserId?: string; // If empty, send to all
+  isRead?: Record<string, boolean>;
+  read?: boolean; // For client-side UI
+  link?: string;
+  icon?: string;
 }
 
 export interface GlobalConfig {
@@ -83,6 +115,7 @@ export interface GlobalConfig {
     background: string;
     text: string;
     accent: string;
+    surface: string;
   };
   fonts: {
     heading: string;
@@ -91,6 +124,8 @@ export interface GlobalConfig {
   styles: {
     cardRadius: string;
     buttonStyle: 'rounded' | 'sharp' | 'pill';
+    blurIntensity: string;
+    spacingScale: string;
   };
 }
 

@@ -1,3 +1,17 @@
+:root {
+  --primary: #2196F3; /* Material Blue */
+  --secondary: #1E1E1E;
+  --background: #0A0A0A;
+  --text: #FFFFFF;
+  --accent: #FFC107;
+  --surface: rgba(255, 255, 255, 0.05);
+  --card-radius: 16px;
+  --blur-intensity: 12px;
+  --spacing-scale: 0.85; /* Reduced from 1.0 to fix "zoomed" feel */
+  --font-heading: 'Inter';
+  --font-body: 'Inter';
+}
+
 @import "tailwindcss";
 
 @theme {
@@ -6,6 +20,7 @@
   --color-background: var(--background);
   --color-text: var(--text);
   --color-accent: var(--accent);
+  --color-surface: var(--surface);
   --font-heading: var(--font-heading);
   --font-body: var(--font-body);
   --radius-card: var(--card-radius);
@@ -15,49 +30,65 @@ body {
   background-color: var(--background);
   color: var(--text);
   font-family: var(--font-body), sans-serif;
+  font-size: calc(1rem * var(--spacing-scale));
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading), sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .gaming-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur-intensity));
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--card-radius);
-  transition: all 0.3s ease;
+  padding: calc(1.25rem * var(--spacing-scale));
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 24px -12px rgba(0, 0, 0, 0.5);
 }
 
 .gaming-card:hover {
   border-color: var(--primary);
-  transform: translateY(-4px);
-  box-shadow: 0 10px 20px -10px var(--primary);
+  transform: scale(1.02);
+  box-shadow: 0 20px 40px -20px var(--primary);
 }
 
 .btn-primary {
   background-color: var(--primary);
-  color: #000;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
+  color: #fff;
+  font-weight: 700;
+  padding: calc(0.75rem * var(--spacing-scale)) calc(1.5rem * var(--spacing-scale));
   border-radius: var(--card-radius);
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 8px 16px -8px var(--primary);
 }
 
 .btn-primary:hover {
   opacity: 0.9;
-  transform: scale(1.02);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -12px var(--primary);
 }
 
 .btn-secondary {
-  background-color: var(--secondary);
+  background-color: var(--surface);
+  backdrop-filter: blur(var(--blur-intensity));
   color: var(--text);
   font-weight: 600;
-  padding: 0.5rem 1rem;
+  padding: calc(0.75rem * var(--spacing-scale)) calc(1.5rem * var(--spacing-scale));
   border-radius: var(--card-radius);
-  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
 }
 
 .btn-secondary:hover {
-  opacity: 0.9;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.glass-nav {
+  background: rgba(var(--background-rgb), 0.7);
+  backdrop-filter: blur(var(--blur-intensity));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }

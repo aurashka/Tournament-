@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { ref, onValue, set, get } from 'firebase/database';
 import { auth, db } from './firebase';
-import { UserProfile, GlobalConfig, Section, Category, CustomField, Badge } from '../types';
+import { UserProfile, GlobalConfig, Section, Category, CustomField, Badge, Notification, ChatMessage } from '../types';
 
 interface FirebaseContextType {
   user: User | null;
@@ -12,6 +12,8 @@ interface FirebaseContextType {
   categories: Category[];
   fields: CustomField[];
   badges: Badge[];
+  notifications: Notification[];
+  chatMessages: ChatMessage[];
   loading: boolean;
   isAdmin: boolean;
 }
@@ -26,6 +28,8 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [categories, setCategories] = useState<Category[]>([]);
   const [fields, setFields] = useState<CustomField[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,19 +54,22 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Default config
         const defaultConfig: GlobalConfig = {
           colors: {
-            primary: '#f59e0b',
-            secondary: '#1f2937',
+            primary: '#2196F3', // Material 3 Blue
+            secondary: '#1e293b',
             background: '#0f172a',
             text: '#f8fafc',
-            accent: '#3b82f6',
+            accent: '#f59e0b',
+            surface: 'rgba(30, 41, 59, 0.7)', // Semi-transparent surface
           },
           fonts: {
-            heading: 'Inter',
+            heading: 'Outfit',
             body: 'Inter',
           },
           styles: {
-            cardRadius: '12px',
-            buttonStyle: 'rounded',
+            cardRadius: '24px', // Material 3 corners
+            buttonStyle: 'pill',
+            blurIntensity: '16px',
+            spacingScale: '0.9', // Reduced from 1.2 to fix "zoomed" feel
           },
         };
         set(configRef, defaultConfig);
@@ -75,7 +82,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     onValue(sectionsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        setSections(Object.values(data).sort((a: any, b: any) => a.order - b.order));
+        setSections((Object.values(data) as Section[]).sort((a, b) => a.order - b.order));
       } else {
         setSections([]);
       }
@@ -102,6 +109,20 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setBadges(data ? Object.values(data) : []);
     });
 
+    // Load Notifications
+    const notificationsRef = ref(db, 'notifications');
+    onValue(notificationsRef, (snapshot) => {
+      const data = snapshot.val();
+      setNotifications(data ? Object.values(data) : []);
+    });
+
+    // Load Chat Messages
+    const chatRef = ref(db, 'chatMessages');
+    onValue(chatRef, (snapshot) => {
+      const data = snapshot.val();
+      setChatMessages(data ? Object.values(data) : []);
+    });
+
     setLoading(false);
     return () => unsubscribeAuth();
   }, []);
@@ -109,7 +130,7 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const isAdmin = profile?.role === 'admin';
 
   return (
-    <FirebaseContext.Provider value={{ user, profile, config, sections, categories, fields, badges, loading, isAdmin }}>
+    <FirebaseContext.Provider value={{ user, profile, config, sections, categories, fields, badges, notifications, chatMessages, loading, isAdmin }}>
       {children}
     </FirebaseContext.Provider>
   );

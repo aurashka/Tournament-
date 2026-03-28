@@ -12,7 +12,10 @@ export const StyleInjector: React.FC = () => {
       root.style.setProperty('--background', config.colors.background);
       root.style.setProperty('--text', config.colors.text);
       root.style.setProperty('--accent', config.colors.accent);
+      root.style.setProperty('--surface', config.colors.surface);
       root.style.setProperty('--card-radius', config.styles.cardRadius);
+      root.style.setProperty('--blur-intensity', config.styles.blurIntensity);
+      root.style.setProperty('--spacing-scale', config.styles.spacingScale);
       root.style.setProperty('--font-heading', config.fonts.heading);
       root.style.setProperty('--font-body', config.fonts.body);
     }

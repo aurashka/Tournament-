@@ -4,8 +4,9 @@ import { useFirebase } from '../lib/FirebaseContext';
 import { ref, onValue, push, set, update } from 'firebase/database';
 import { db } from '../lib/firebase';
 import { Tournament, Comment, Application } from '../types';
-import { Trophy, Calendar, Users, MessageSquare, Share2, Play, Info, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { Trophy, Calendar, Users, MessageSquare, Share2, Play, Info, Shield, CheckCircle, XCircle, User, Edit2, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 export const TournamentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,7 +30,7 @@ export const TournamentDetail: React.FC = () => {
     const cRef = ref(db, `comments/${id}`);
     onValue(cRef, (snapshot) => {
       const data = snapshot.val();
-      setComments(data ? Object.values(data).sort((a: any, b: any) => b.timestamp - a.timestamp) : []);
+      setComments(data ? (Object.values(data) as Comment[]).sort((a, b) => b.timestamp - a.timestamp) : []);
     });
 
     const aRef = ref(db, `applications/${id}`);
@@ -55,14 +56,15 @@ export const TournamentDetail: React.FC = () => {
 
   const handleApply = async () => {
     if (!user || !id) return;
-    const newRef = push(ref(db, `applications/${id}`));
+    const newRef = push(ref(db, 'applications'));
     await set(newRef, {
       id: newRef.key,
       tournamentId: id,
       userId: user.uid,
+      userIgn: profile?.ign || 'Unknown',
       status: 'pending',
-      data: applicationData,
-      timestamp: Date.now(),
+      details: applicationData,
+      submittedAt: new Date().toISOString(),
     });
     setIsApplying(false);
     setApplicationData({});
@@ -70,7 +72,7 @@ export const TournamentDetail: React.FC = () => {
 
   if (!tournament) return <div className="p-8 text-center">Loading...</div>;
 
-  const userApplication = applications.find(a => a.userId === user?.uid);
+  const userApplication = applications.find(a => a.userId === user?.uid && a.tournamentId === id);
   const tournamentFields = fields.filter(f => f.target === 'tournament_form');
 
   return (
@@ -147,6 +149,23 @@ export const TournamentDetail: React.FC = () => {
             </div>
           </div>
 
+          {/* Custom Details */}
+          {tournament.customFields && Object.keys(tournament.customFields).length > 0 && (
+            <div className="bg-secondary p-8 rounded-3xl border border-white/5 space-y-4">
+              <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
+                <Shield className="text-primary" /> Tournament Details
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(tournament.customFields).map(([key, value]) => (
+                  <div key={key} className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <span className="text-[10px] text-white/30 uppercase font-bold tracking-widest block mb-1">{key}</span>
+                    <span className="text-lg font-bold text-white/90">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Live Stream */}
           {tournament.liveUrl && (
             <div className="bg-secondary p-8 rounded-3xl border border-white/5 space-y-4">
@@ -196,8 +215,11 @@ export const TournamentDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Participants */}
+        {/* Right Column: Participants & Host */}
         <div className="space-y-8">
+          {/* Host Info */}
+          {tournament.hostId && <HostCard hostId={tournament.hostId} />}
+
           <div className="bg-secondary p-8 rounded-3xl border border-white/5 space-y-6">
             <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
               <Users className="text-primary" /> Participants
@@ -269,7 +291,10 @@ export const TournamentDetail: React.FC = () => {
 
 const CommentItem: React.FC<{ comment: Comment }> = ({ comment }) => {
   const [author, setAuthor] = useState<any>(null);
-  const { badges } = useFirebase();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.text);
+  const { badges, profile } = useFirebase();
+  const isAdmin = profile?.role === 'admin';
 
   useEffect(() => {
     const uRef = ref(db, `users/${comment.userId}`);
@@ -277,6 +302,18 @@ const CommentItem: React.FC<{ comment: Comment }> = ({ comment }) => {
       setAuthor(snapshot.val());
     });
   }, [comment.userId]);
+
+  const handleUpdate = async () => {
+    if (!editText.trim()) return;
+    await update(ref(db, `comments/${comment.tournamentId}/${comment.id}`), { text: editText });
+    setIsEditing(false);
+  };
+
+  const handleDelete = async () => {
+    if (confirm('Delete this comment?')) {
+      await set(ref(db, `comments/${comment.tournamentId}/${comment.id}`), null);
+    }
+  };
 
   if (!author) return null;
 
@@ -291,23 +328,82 @@ const CommentItem: React.FC<{ comment: Comment }> = ({ comment }) => {
   };
 
   return (
-    <div className="flex gap-4 group">
+    <div className="flex gap-4 group relative">
       <img src={author.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.uid}`} className="w-10 h-10 rounded-full border-2 border-white/5" />
       <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-sm" style={{ color: author.style?.color, fontSize: author.style?.fontSize, fontWeight: author.style?.fontWeight }}>
-            {author.ign}
-          </span>
-          <div className="flex gap-1">
-            {author.badges?.map((bId: string) => {
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-sm" style={{ color: author.style?.color, fontSize: author.style?.fontSize, fontWeight: author.style?.fontWeight }}>
+              {author.ign}
+            </span>
+            <div className="flex gap-1">
+              {author.badges?.map((bId: string) => {
+                const badge = badges.find(b => b.id === bId);
+                return badge ? <img key={bId} src={badge.imageUrl} className="w-3.5 h-3.5 object-contain" title={badge.name} /> : null;
+              })}
+            </div>
+            <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{formatDistanceToNow(comment.timestamp)} ago</span>
+          </div>
+          
+          {isAdmin && (
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => setIsEditing(!isEditing)} className="p-1 hover:text-primary"><Edit2 size={14} /></button>
+              <button onClick={handleDelete} className="p-1 hover:text-red-500"><Trash2 size={14} /></button>
+            </div>
+          )}
+        </div>
+
+        {isEditing ? (
+          <div className="space-y-2 mt-2">
+            <textarea
+              value={editText}
+              onChange={e => setEditText(e.target.value)}
+              className="w-full bg-background border border-white/10 rounded-lg p-2 text-sm"
+            />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setIsEditing(false)} className="text-xs px-2 py-1">Cancel</button>
+              <button onClick={handleUpdate} className="text-xs px-2 py-1 bg-primary text-black rounded">Save</button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-white/80 leading-relaxed">{renderText(comment.text)}</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const HostCard: React.FC<{ hostId: string }> = ({ hostId }) => {
+  const [host, setHost] = useState<any>(null);
+  const { badges } = useFirebase();
+
+  useEffect(() => {
+    const hRef = ref(db, `users/${hostId}`);
+    onValue(hRef, (snapshot) => {
+      setHost(snapshot.val());
+    });
+  }, [hostId]);
+
+  if (!host) return null;
+
+  return (
+    <div className="bg-secondary p-8 rounded-3xl border border-white/5 space-y-6">
+      <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
+        <User className="text-primary" /> Tournament Host
+      </h2>
+      <Link to={`/profile/${host.uid}`} className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 hover:border-primary/20 transition-all group">
+        <img src={host.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${host.uid}`} className="w-16 h-16 rounded-2xl border-2 border-white/10 group-hover:scale-105 transition-transform" />
+        <div>
+          <span className="text-lg font-black block" style={{ color: host.style?.color }}>{host.ign}</span>
+          <div className="flex gap-1 mb-1">
+            {host.badges?.map((bId: string) => {
               const badge = badges.find(b => b.id === bId);
-              return badge ? <img key={bId} src={badge.imageUrl} className="w-3.5 h-3.5 object-contain" title={badge.name} /> : null;
+              return badge ? <img key={bId} src={badge.imageUrl} className="w-4 h-4 object-contain" title={badge.name} /> : null;
             })}
           </div>
-          <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{formatDistanceToNow(comment.timestamp)} ago</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-primary">View Profile</span>
         </div>
-        <p className="text-sm text-white/80 leading-relaxed">{renderText(comment.text)}</p>
-      </div>
+      </Link>
     </div>
   );
 };

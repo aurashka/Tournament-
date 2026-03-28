@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useFirebase } from '../lib/FirebaseContext';
-import { LayoutGrid, Settings, Users, Trophy, Palette, FileText, Badge as BadgeIcon, MessageSquare } from 'lucide-react';
+import { LayoutGrid, Settings, Users, Trophy, Palette, FileText, Badge as BadgeIcon, MessageSquare, Bell } from 'lucide-react';
 import { SectionManager } from './SectionManager';
 import { FieldManager } from './FieldManager';
 import { DesignManager } from './DesignManager';
@@ -8,6 +8,8 @@ import { TournamentManager } from './TournamentManager';
 import { UserManager } from './UserManager';
 import { BadgeManager } from './BadgeManager';
 import { CategoryManager } from './CategoryManager';
+import { ChatManager } from './ChatManager';
+import { NotificationManager } from './NotificationManager';
 
 export const AdminPanel: React.FC = () => {
   const { isAdmin } = useFirebase();
@@ -25,6 +27,8 @@ export const AdminPanel: React.FC = () => {
     { id: 'tournaments', label: 'Tournaments', icon: Trophy },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'badges', label: 'Badges', icon: BadgeIcon },
+    { id: 'chats', label: 'Chats', icon: MessageSquare },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
 
   return (
@@ -59,6 +63,8 @@ export const AdminPanel: React.FC = () => {
         {activeTab === 'tournaments' && <TournamentManager />}
         {activeTab === 'users' && <UserManager />}
         {activeTab === 'badges' && <BadgeManager />}
+        {activeTab === 'chats' && <ChatManager />}
+        {activeTab === 'notifications' && <NotificationManager />}
       </div>
     </div>
   );
