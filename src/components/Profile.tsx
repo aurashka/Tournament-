@@ -6,7 +6,7 @@ import { UserProfile, Badge, Tournament, Application } from '../types';
 import { Trophy, Shield, Play, Settings, Edit2, LogOut, Badge as BadgeIcon, Info, Mars, Venus, Check, Image as ImageIcon } from 'lucide-react';
 import { uploadImage } from '../lib/utils';
 import { signOut } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 
 const PRESET_AVATARS = {
   male: ['Felix', 'Max', 'Oliver', 'James', 'Leo'],
@@ -14,16 +14,37 @@ const PRESET_AVATARS = {
 };
 
 export const Profile: React.FC = () => {
-  const { user, profile, badges } = useFirebase();
+  const { uid } = useParams<{ uid: string }>();
+  const { user, profile: myProfile, badges } = useFirebase();
   const navigate = useNavigate();
+  const [targetProfile, setTargetProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<UserProfile>>({});
   const [userApplications, setUserApplications] = useState<Application[]>([]);
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const isOwnProfile = !uid || uid === user?.uid;
+  const effectiveProfile = isOwnProfile ? myProfile : targetProfile;
 
   useEffect(() => {
-    if (!user) return;
-    setFormData(profile || {});
+    if (uid && uid !== user?.uid) {
+      setLoading(true);
+      const uRef = ref(db, `users/${uid}`);
+      onValue(uRef, (snapshot) => {
+        setTargetProfile(snapshot.val());
+        setLoading(false);
+      });
+    } else {
+      setTargetProfile(null);
+      setLoading(false);
+    }
+  }, [uid, user]);
+
+  useEffect(() => {
+    const profileToUse = isOwnProfile ? myProfile : targetProfile;
+    if (!profileToUse) return;
+    setFormData(profileToUse || {});
 
     // Load user applications
     const aRef = ref(db, 'applications');
@@ -31,7 +52,7 @@ export const Profile: React.FC = () => {
       const data = snapshot.val();
       if (data) {
         const apps: Application[] = Object.values(data) as Application[];
-        setUserApplications(apps.filter(app => app.userId === user.uid));
+        setUserApplications(apps.filter(app => app.userId === profileToUse.uid));
       }
     });
 
@@ -41,7 +62,7 @@ export const Profile: React.FC = () => {
       const data = snapshot.val();
       setTournaments(data ? Object.values(data) as Tournament[] : []);
     });
-  }, [user, profile]);
+  }, [isOwnProfile, myProfile, targetProfile]);
 
   const handleUpdate = async () => {
     if (!user) return;
@@ -66,7 +87,8 @@ export const Profile: React.FC = () => {
     navigate('/');
   };
 
-  if (!user || !profile) return <div className="p-8 text-center">Please login to view profile</div>;
+  if (loading) return <div className="p-12 text-center text-primary font-black uppercase tracking-widest animate-pulse">Loading Profile...</div>;
+  if (!effectiveProfile) return <div className="p-12 text-center text-white/30 italic">User not found</div>;
 
   return (
     <div className="space-y-8 pb-16">
@@ -76,10 +98,10 @@ export const Profile: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
           <div className="relative group">
             <img 
-              src={profile.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} 
+              src={effectiveProfile.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${effectiveProfile.uid}`} 
               className="w-40 h-40 rounded-3xl border-4 border-white/10 shadow-2xl object-cover" 
             />
-            {isEditing && (
+            {isEditing && isOwnProfile && (
               <label className="absolute inset-0 bg-black/60 rounded-3xl flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
                 <input type="file" className="hidden" onChange={handleImageUpload} />
                 <Edit2 size={24} />
@@ -89,49 +111,70 @@ export const Profile: React.FC = () => {
           
           <div className="flex-1 text-center md:text-left space-y-4">
             <div className="flex flex-col md:flex-row items-center gap-4">
-              <h1 className="text-4xl font-black uppercase tracking-tighter italic" style={{ color: profile.style?.color, fontSize: profile.style?.fontSize, fontWeight: profile.style?.fontWeight }}>
-                {profile.ign}
-              </h1>
-              {profile.gender && (
-                <div className={`p-2 rounded-full ${profile.gender === 'male' ? 'bg-blue-500/20 text-blue-500' : 'bg-pink-500/20 text-pink-500'}`}>
-                  {profile.gender === 'male' ? <Mars size={20} /> : <Venus size={20} />}
+              {effectiveProfile.nameImage ? (
+                <img 
+                  src={effectiveProfile.nameImage} 
+                  alt={effectiveProfile.ign} 
+                  className="h-10 object-contain" 
+                  style={{ width: effectiveProfile.nameImageWidth ? `${effectiveProfile.nameImageWidth}px` : 'auto' }}
+                />
+              ) : (
+                <h1 className="text-4xl font-black uppercase tracking-tighter italic" style={{ color: effectiveProfile.style?.color, fontSize: effectiveProfile.style?.fontSize, fontWeight: effectiveProfile.style?.fontWeight }}>
+                  {effectiveProfile.ign}
+                </h1>
+              )}
+              {effectiveProfile.gender && (
+                <div className={`p-2 rounded-full ${effectiveProfile.gender === 'male' ? 'bg-blue-500/20 text-blue-500' : 'bg-pink-500/20 text-pink-500'}`}>
+                  {effectiveProfile.gender === 'male' ? <Mars size={20} /> : <Venus size={20} />}
                 </div>
               )}
               <div className="flex gap-2">
-                {profile.badges?.map(bId => {
+                {effectiveProfile.badges?.map(bId => {
                   const badge = badges.find(b => b.id === bId);
-                  return badge ? <img key={bId} src={badge.imageUrl} className="w-6 h-6 object-contain" title={badge.name} /> : null;
+                  return badge ? (
+                    <div key={bId} className="relative group/badge">
+                      <img src={badge.imageUrl} className="w-6 h-6 object-contain cursor-help" />
+                      {badge.detail && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-black/95 text-[10px] text-white rounded-xl opacity-0 group-hover/badge:opacity-100 transition-opacity pointer-events-none z-50 border border-white/10 shadow-2xl">
+                          <div className="font-black text-primary uppercase tracking-widest mb-1">{badge.name}</div>
+                          <div className="text-white/70 leading-relaxed">{badge.detail}</div>
+                        </div>
+                      )}
+                    </div>
+                  ) : null;
                 })}
               </div>
               <span className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-black uppercase tracking-widest rounded-full border border-primary/20">
-                {profile.role}
+                {effectiveProfile.role}
               </span>
             </div>
             
-            <p className="text-white/50 font-medium">{profile.email}</p>
+            <p className="text-white/50 font-medium">{effectiveProfile.email}</p>
             
-            {profile.notice && (
+            {effectiveProfile.notice && (
               <div className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-start gap-3">
                 <Info className="text-primary shrink-0" size={20} />
-                <p className="text-sm text-primary/80 italic">{profile.notice}</p>
+                <p className="text-sm text-primary/80 italic">{effectiveProfile.notice}</p>
               </div>
             )}
 
-            <div className="flex flex-wrap justify-center md:justify-start gap-4">
-              <button onClick={() => setIsEditing(!isEditing)} className="btn-secondary flex items-center gap-2">
-                <Settings size={18} /> {isEditing ? 'Cancel' : 'Edit Profile'}
-              </button>
-              <button onClick={handleLogout} className="px-6 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl font-bold transition-all flex items-center gap-2">
-                <LogOut size={18} /> Logout
-              </button>
-            </div>
+            {isOwnProfile && (
+              <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                <button onClick={() => setIsEditing(!isEditing)} className="btn-secondary flex items-center gap-2">
+                  <Settings size={18} /> {isEditing ? 'Cancel' : 'Edit Profile'}
+                </button>
+                <button onClick={handleLogout} className="px-6 py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl font-bold transition-all flex items-center gap-2">
+                  <LogOut size={18} /> Logout
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4 w-full md:w-auto">
             {[
-              { label: 'Played', value: profile.stats?.played || 0, icon: Play },
-              { label: 'Won', value: profile.stats?.won || 0, icon: Trophy },
-              { label: 'Active', value: profile.stats?.live || 0, icon: Shield },
+              { label: 'Played', value: effectiveProfile.stats?.played || 0, icon: Play },
+              { label: 'Won', value: effectiveProfile.stats?.won || 0, icon: Trophy },
+              { label: 'Active', value: effectiveProfile.stats?.live || 0, icon: Shield },
             ].map((stat, i) => (
               <div key={i} className="bg-background/50 p-4 rounded-2xl border border-white/5 flex flex-col items-center text-center min-w-[100px]">
                 <stat.icon className="text-primary mb-2" size={20} />
@@ -253,17 +296,23 @@ export const Profile: React.FC = () => {
             <BadgeIcon className="text-primary" /> My Badges
           </h2>
           <div className="grid grid-cols-4 gap-4">
-            {profile.badges?.map(bId => {
+            {effectiveProfile.badges?.map(bId => {
               const badge = badges.find(b => b.id === bId);
               if (!badge) return null;
               return (
-                <div key={bId} className="bg-background/50 p-4 rounded-2xl border border-white/5 flex flex-col items-center text-center gap-2 group hover:border-primary/20 transition-all">
+                <div key={bId} className="bg-background/50 p-4 rounded-2xl border border-white/5 flex flex-col items-center text-center gap-2 group hover:border-primary/20 transition-all relative">
                   <img src={badge.imageUrl} className="w-12 h-12 object-contain group-hover:scale-110 transition-transform" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-white/50">{badge.name}</span>
+                  {badge.detail && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-black/95 text-[10px] text-white rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 border border-white/10 shadow-2xl">
+                      <div className="font-black text-primary uppercase tracking-widest mb-1">{badge.name}</div>
+                      <div className="text-white/70 leading-relaxed">{badge.detail}</div>
+                    </div>
+                  )}
                 </div>
               );
             })}
-            {(!profile.badges || profile.badges.length === 0) && (
+            {(!effectiveProfile.badges || effectiveProfile.badges.length === 0) && (
               <div className="col-span-4 text-center text-white/30 py-12 italic text-sm">No badges earned yet</div>
             )}
           </div>

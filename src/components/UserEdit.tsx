@@ -4,7 +4,8 @@ import { useFirebase } from '../lib/FirebaseContext';
 import { ref, onValue, update } from 'firebase/database';
 import { db } from '../lib/firebase';
 import { UserProfile } from '../types';
-import { Palette, Badge as BadgeIcon, ArrowLeft, Save, Shield, Ban, UserCheck } from 'lucide-react';
+import { Palette, Badge as BadgeIcon, ArrowLeft, Save, Shield, Ban, UserCheck, Image as ImageIcon } from 'lucide-react';
+import { uploadImage } from '../lib/utils';
 import { motion } from 'motion/react';
 
 export const UserEdit: React.FC = () => {
@@ -29,6 +30,18 @@ export const UserEdit: React.FC = () => {
 
     return () => unsubscribe();
   }, [uid, isAdmin, navigate]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && user) {
+      try {
+        const url = await uploadImage(file);
+        setUser({ ...user, nameImage: url });
+      } catch (err) {
+        alert('Upload failed');
+      }
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -164,6 +177,46 @@ export const UserEdit: React.FC = () => {
                     <option value="bold">Bold</option>
                     <option value="900">Black</option>
                   </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-black uppercase tracking-tight flex items-center gap-3 pt-6 border-t border-white/5">
+                <ImageIcon className="text-primary" /> PNG Name (Admin Only)
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">PNG Name URL or Upload</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="https://... (Image Link)"
+                      value={user.nameImage || ''}
+                      onChange={e => setUser({ ...user, nameImage: e.target.value })}
+                      className="flex-1 bg-background border border-white/10 rounded-2xl p-4 outline-none focus:border-primary text-sm"
+                    />
+                    <input
+                      type="file"
+                      id="nameImageUpload"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                    />
+                    <label htmlFor="nameImageUpload" className="p-4 bg-background border border-white/10 rounded-2xl cursor-pointer hover:bg-white/10 transition-all flex items-center justify-center shrink-0">
+                      <ImageIcon size={20} className="text-primary" />
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Name Image Width (px)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 150"
+                    value={user.nameImageWidth || ''}
+                    onChange={e => setUser({ ...user, nameImageWidth: parseInt(e.target.value) || 0 })}
+                    className="w-full bg-background border border-white/10 rounded-2xl p-4 outline-none focus:border-primary text-sm"
+                  />
                 </div>
               </div>
             </div>

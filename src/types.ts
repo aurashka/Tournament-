@@ -13,6 +13,7 @@ export interface Badge {
   id: string;
   name: string;
   imageUrl: string;
+  detail?: string;
 }
 
 export interface UserStyle {
@@ -29,6 +30,8 @@ export interface UserProfile {
   role: UserRole;
   gender?: 'male' | 'female';
   profileImage?: string;
+  nameImage?: string; // PNG for name
+  nameImageWidth?: number;
   badges?: string[]; // Array of badge IDs
   style?: UserStyle;
   stats?: {
@@ -144,6 +147,7 @@ export interface Comment {
   replies?: Record<string, Comment>;
   parentId?: string;
   mentions?: string[]; // Array of user IDs
+  isPinned?: boolean;
 }
 
 export interface Application {

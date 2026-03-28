@@ -19,7 +19,8 @@ import { HelpCenter } from './components/HelpCenter';
 import { Trophy, User, LayoutGrid, Shield, Search, Menu, X, Gamepad2, LogIn, LogOut, Bell, Info, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { signOut } from 'firebase/auth';
-import { auth as firebaseAuth } from './lib/firebase';
+import { ref, onValue } from 'firebase/database';
+import { auth as firebaseAuth, db } from './lib/firebase';
 
 const Navigation: React.FC = () => {
   const { user, isAdmin, profile, notifications, markNotificationAsRead } = useFirebase();
@@ -40,6 +41,40 @@ const Navigation: React.FC = () => {
       });
     }
   }, [isNotifOpen, unreadNotifs, notifications, markNotificationAsRead]);
+
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState<{ tournaments: any[], players: any[] }>({ tournaments: [], players: [] });
+
+  React.useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults({ tournaments: [], players: [] });
+      return;
+    }
+
+    const tRef = ref(db, 'tournaments');
+    const uRef = ref(db, 'users');
+
+    onValue(tRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const list = Object.values(data).filter((t: any) => 
+          t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.game.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setSearchResults(prev => ({ ...prev, tournaments: list.slice(0, 5) }));
+      }
+    });
+
+    onValue(uRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const list = Object.values(data).filter((u: any) => 
+          u.ign?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setSearchResults(prev => ({ ...prev, players: list.slice(0, 5) }));
+      }
+    });
+  }, [searchQuery]);
 
   const handleLogout = async () => {
     await signOut(firebaseAuth);
@@ -100,9 +135,87 @@ const Navigation: React.FC = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-4">
+            <div className="relative hidden md:block">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-4 py-2 focus-within:border-primary transition-all">
+                <Search size={18} className="text-white/30" />
+                <input 
+                  type="text" 
+                  placeholder="Search tournaments or players..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent border-none outline-none text-sm w-64"
+                />
+              </div>
+
+              <AnimatePresence>
+                {searchQuery.trim() && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute top-full left-0 right-0 mt-2 bg-secondary border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                  >
+                    <div className="max-h-[70vh] overflow-y-auto p-2 space-y-4">
+                      {searchResults.tournaments.length > 0 && (
+                        <div>
+                          <div className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/20">Tournaments</div>
+                          <div className="space-y-1 mt-1">
+                            {searchResults.tournaments.map(t => (
+                              <Link 
+                                key={t.id} 
+                                to={`/tournament/${t.id}`}
+                                onClick={() => setSearchQuery('')}
+                                className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl transition-all"
+                              >
+                                <img src={t.logo} className="w-8 h-8 rounded-lg object-cover" />
+                                <div>
+                                  <div className="text-xs font-bold">{t.title}</div>
+                                  <div className="text-[9px] text-white/30 uppercase font-bold tracking-widest">{t.game}</div>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {searchResults.players.length > 0 && (
+                        <div>
+                          <div className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/20">Players</div>
+                          <div className="space-y-1 mt-1">
+                            {searchResults.players.map(p => (
+                              <Link 
+                                key={p.uid} 
+                                to={`/profile/${p.uid}`}
+                                onClick={() => setSearchQuery('')}
+                                className="flex items-center gap-3 p-2 hover:bg-white/5 rounded-xl transition-all"
+                              >
+                                <img src={p.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.uid}`} className="w-8 h-8 rounded-lg object-cover" />
+                                <div>
+                                  {p.nameImage ? (
+                                    <img src={p.nameImage} className="h-3 object-contain" style={{ width: p.nameImageWidth ? `${p.nameImageWidth/2}px` : 'auto' }} />
+                                  ) : (
+                                    <div className="text-xs font-bold" style={{ color: p.style?.color }}>{p.ign}</div>
+                                  )}
+                                  <div className="text-[9px] text-white/30 uppercase font-bold tracking-widest">Level {p.stats?.played || 0}</div>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {searchResults.tournaments.length === 0 && searchResults.players.length === 0 && (
+                        <div className="p-8 text-center text-white/20 italic text-sm">No results found</div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <button 
               onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-3 hover:bg-white/5 rounded-2xl transition-colors"
+              className="p-3 hover:bg-white/5 rounded-2xl transition-colors md:hidden"
             >
               <Search className="w-6 h-6" />
             </button>
@@ -228,16 +341,76 @@ const Navigation: React.FC = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-white/10 p-6 shadow-2xl"
+            className="absolute top-full left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-white/10 p-4 md:p-6 shadow-2xl z-40"
           >
-            <div className="max-w-3xl mx-auto relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 w-6 h-6" />
-              <input 
-                type="text"
-                placeholder="Search tournaments, games, players..."
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-6 focus:outline-none focus:border-primary text-lg"
-                autoFocus
-              />
+            <div className="max-w-3xl mx-auto relative space-y-4">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 w-6 h-6" />
+                <input 
+                  type="text"
+                  placeholder="Search tournaments or players..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-6 focus:outline-none focus:border-primary text-lg"
+                  autoFocus
+                />
+              </div>
+
+              {searchQuery.trim() && (
+                <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                  {searchResults.tournaments.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-white/20 mb-2">Tournaments</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {searchResults.tournaments.map(t => (
+                          <Link 
+                            key={t.id} 
+                            to={`/tournament/${t.id}`}
+                            onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
+                            className="flex items-center gap-4 p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/5"
+                          >
+                            <img src={t.logo} className="w-12 h-12 rounded-xl object-cover" />
+                            <div>
+                              <div className="font-bold text-sm">{t.title}</div>
+                              <div className="text-[10px] text-white/30 uppercase font-bold tracking-widest">{t.game}</div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {searchResults.players.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-white/20 mb-2">Players</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {searchResults.players.map(p => (
+                          <Link 
+                            key={p.uid} 
+                            to={`/profile/${p.uid}`}
+                            onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
+                            className="flex items-center gap-4 p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/5"
+                          >
+                            <img src={p.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.uid}`} className="w-12 h-12 rounded-xl object-cover" />
+                            <div>
+                              {p.nameImage ? (
+                                <img src={p.nameImage} className="h-4 object-contain" style={{ width: p.nameImageWidth ? `${p.nameImageWidth/2}px` : 'auto' }} />
+                              ) : (
+                                <div className="font-bold text-sm" style={{ color: p.style?.color }}>{p.ign}</div>
+                              )}
+                              <div className="text-[10px] text-white/30 uppercase font-bold tracking-widest">Level {p.stats?.played || 0}</div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {searchResults.tournaments.length === 0 && searchResults.players.length === 0 && (
+                    <div className="p-12 text-center text-white/20 italic text-sm">No results found</div>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -317,6 +490,7 @@ export default function App() {
               <Route path="/tournaments" element={<TournamentList />} />
               <Route path="/tournament/:id" element={<TournamentDetail />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:uid" element={<Profile />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/admin/user/:uid" element={<UserEdit />} />
               <Route path="/login" element={<Auth mode="login" />} />

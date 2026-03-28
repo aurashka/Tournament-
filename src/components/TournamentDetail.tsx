@@ -4,7 +4,7 @@ import { useFirebase } from '../lib/FirebaseContext';
 import { ref, onValue, push, set, update } from 'firebase/database';
 import { db } from '../lib/firebase';
 import { Tournament, Comment, Application } from '../types';
-import { Trophy, Calendar, Users, MessageSquare, Share2, Play, Info, Shield, CheckCircle, XCircle, User, Edit2, Trash2, Heart, Reply, ChevronDown, ChevronUp, Search, ThumbsUp } from 'lucide-react';
+import { Trophy, Calendar, Users, MessageSquare, Share2, Play, Info, Shield, CheckCircle, XCircle, User, Edit2, Trash2, Heart, Reply, ChevronDown, ChevronUp, Search, ThumbsUp, Pin, Filter } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -21,6 +21,7 @@ export const TournamentDetail: React.FC = () => {
   const [applicationData, setApplicationData] = useState<Record<string, any>>({});
   const [showAllParticipants, setShowAllParticipants] = useState(false);
   const [commentSort, setCommentSort] = useState<'newest' | 'oldest' | 'likes'>('newest');
+  const [commentLimit, setCommentLimit] = useState(5);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [mentionSearch, setMentionSearch] = useState('');
   const [showMentionList, setShowMentionList] = useState(false);
@@ -297,25 +298,26 @@ export const TournamentDetail: React.FC = () => {
           </h2>
           
           <div className="flex items-center gap-2 bg-background/50 p-1 rounded-2xl border border-white/5">
-            {(['newest', 'oldest', 'likes'] as const).map(sort => (
-              <button
-                key={sort}
-                onClick={() => setCommentSort(sort)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  commentSort === sort ? 'bg-primary text-black shadow-lg shadow-primary/20' : 'text-white/30 hover:text-white'
-                }`}
-              >
-                {sort}
-              </button>
-            ))}
+            <button
+              onClick={() => {
+                const sorts: ('newest' | 'oldest' | 'likes')[] = ['newest', 'oldest', 'likes'];
+                const next = sorts[(sorts.indexOf(commentSort) + 1) % sorts.length];
+                setCommentSort(next);
+              }}
+              className="p-2 md:p-3 hover:bg-white/5 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/50 hover:text-primary"
+              title={`Sort by: ${commentSort}`}
+            >
+              <Filter size={16} />
+              <span className="hidden md:inline">{commentSort}</span>
+            </button>
           </div>
         </div>
 
         <div className="space-y-8">
           {/* Comment Input */}
-          <div className="flex gap-3 md:gap-6 bg-white/5 p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-white/5 relative">
-            <img src={profile?.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl border-2 border-primary/20" />
-            <div className="flex-1 space-y-3 md:space-y-4">
+          <div className="flex gap-3 md:gap-6 bg-white/5 p-4 md:p-6 rounded-2xl border border-white/5 relative group/input">
+            <img src={profile?.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} className="w-10 h-10 md:w-12 md:h-12 rounded-xl border-2 border-primary/20" />
+            <div className="flex-1 space-y-3">
               <div className="relative">
                 <textarea
                   value={newComment}
@@ -331,7 +333,7 @@ export const TournamentDetail: React.FC = () => {
                     }
                   }}
                   placeholder={replyTo ? "Write a reply..." : "Join the discussion..."}
-                  className="w-full bg-background/50 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-4 h-24 md:h-32 focus:border-primary transition-all outline-none text-xs md:text-sm resize-none"
+                  className="w-full bg-background/30 border-b-2 border-white/10 focus:border-primary p-2 md:p-3 h-12 md:h-16 focus:h-24 md:focus:h-32 transition-all outline-none text-xs md:text-sm resize-none scrollbar-hide"
                 />
                 
                 {/* Mention List Dropdown */}
@@ -369,21 +371,17 @@ export const TournamentDetail: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              <div className="flex justify-between items-center">
-                <div className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
-                  Type <span className="text-primary">@</span> to mention someone
-                </div>
-                <div className="flex gap-3">
-                  {replyTo && (
-                    <button onClick={() => setReplyTo(null)} className="px-4 py-2 text-xs font-bold text-white/40 hover:text-white">Cancel Reply</button>
-                  )}
-                  <button 
-                    onClick={() => handleComment(replyTo || undefined)} 
-                    className="btn-primary px-8 shadow-xl shadow-primary/20"
-                  >
-                    {replyTo ? 'Post Reply' : 'Post Comment'}
-                  </button>
-                </div>
+              <div className="flex justify-end items-center gap-3">
+                {replyTo && (
+                  <button onClick={() => setReplyTo(null)} className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-white">Cancel</button>
+                )}
+                <button 
+                  onClick={() => handleComment(replyTo || undefined)} 
+                  disabled={!newComment.trim()}
+                  className="btn-primary px-6 py-2 text-[10px] shadow-xl shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {replyTo ? 'Reply' : 'Comment'}
+                </button>
               </div>
             </div>
           </div>
@@ -393,10 +391,13 @@ export const TournamentDetail: React.FC = () => {
             {comments
               .filter(c => !c.parentId)
               .sort((a, b) => {
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
                 if (commentSort === 'newest') return b.timestamp - a.timestamp;
                 if (commentSort === 'oldest') return a.timestamp - b.timestamp;
                 return (Object.keys(b.likes || {}).length) - (Object.keys(a.likes || {}).length);
               })
+              .slice(0, commentLimit)
               .map(comment => (
                 <CommentItem 
                   key={comment.id} 
@@ -404,13 +405,25 @@ export const TournamentDetail: React.FC = () => {
                   replies={comments.filter(r => r.parentId === comment.id)}
                   onReply={() => {
                     setReplyTo(comment.id);
-                    const el = document.querySelector('.bg-secondary.p-8.md\\:p-12');
-                    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' });
+                    const el = document.querySelector('.bg-secondary.p-4.md\\:p-12');
+                    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' });
                   }}
                   onLike={() => handleLike(comment.id, comment.likes)}
                   handleLike={handleLike}
+                  allUsers={allUsers}
                 />
               ))}
+            
+            {comments.filter(c => !c.parentId).length > commentLimit && (
+              <div className="flex justify-center pt-8">
+                <button 
+                  onClick={() => setCommentLimit(prev => prev + 5)}
+                  className="px-8 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-primary transition-all border border-white/5"
+                >
+                  Load More Comments
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -532,7 +545,8 @@ const CommentItem: React.FC<{
   onReply: () => void;
   onLike: () => void;
   handleLike: (commentId: string, currentLikes?: Record<string, boolean>) => Promise<void>;
-}> = ({ comment, replies = [], onReply, onLike, handleLike }) => {
+  allUsers: any[];
+}> = ({ comment, replies = [], onReply, onLike, handleLike, allUsers }) => {
   const [author, setAuthor] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
@@ -560,6 +574,10 @@ const CommentItem: React.FC<{
     }
   };
 
+  const handlePin = async () => {
+    await update(ref(db, `comments/${comment.tournamentId}/${comment.id}`), { isPinned: !comment.isPinned });
+  };
+
   if (!author) return null;
 
   const renderText = (text: string) => {
@@ -567,13 +585,23 @@ const CommentItem: React.FC<{
     return parts.map((part, i) => {
       if (part.startsWith('@')) {
         const ign = part.slice(1);
+        const mentionedUser = allUsers.find(u => u.ign === ign);
         return (
           <Link 
             key={i} 
-            to={`/profile/${ign}`}
-            className="text-primary font-bold hover:underline transition-all"
+            to={`/profile/${mentionedUser?.uid || ign}`}
+            className="inline-flex items-center gap-1 text-primary font-bold hover:underline transition-all align-middle"
           >
-            {part}
+            {mentionedUser?.nameImage ? (
+              <img 
+                src={mentionedUser.nameImage} 
+                alt={ign} 
+                className="h-3 object-contain" 
+                style={{ width: mentionedUser.nameImageWidth ? `${mentionedUser.nameImageWidth/2}px` : 'auto' }}
+              />
+            ) : (
+              <span style={{ color: mentionedUser?.style?.color }}>{part}</span>
+            )}
           </Link>
         );
       }
@@ -583,17 +611,45 @@ const CommentItem: React.FC<{
 
   return (
     <div className="space-y-2">
+      {comment.isPinned && (
+        <div className="flex items-center gap-2 ml-10 mb-1">
+          <Pin size={10} className="text-primary fill-primary" />
+          <span className="text-[8px] font-black uppercase tracking-widest text-primary">Pinned by Host</span>
+        </div>
+      )}
       <div className="flex gap-2 group relative">
-        <img src={author.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.uid}`} className="w-8 h-8 rounded-full border border-white/5 shadow-md shrink-0" />
+        <Link to={`/profile/${author.uid}`} className="shrink-0">
+          <img src={author.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.uid}`} className="w-8 h-8 rounded-full border border-white/5 shadow-md" />
+        </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-bold text-[11px] uppercase tracking-tight" style={{ color: author.style?.color, fontSize: author.style?.fontSize, fontWeight: author.style?.fontWeight }}>
-              {author.ign}
-            </span>
+            <Link to={`/profile/${author.uid}`} className="flex items-center gap-2">
+              {author.nameImage ? (
+                <img 
+                  src={author.nameImage} 
+                  alt={author.ign} 
+                  className="h-4 object-contain" 
+                  style={{ width: author.nameImageWidth ? `${author.nameImageWidth}px` : 'auto' }}
+                />
+              ) : (
+                <span className="font-bold text-[11px] uppercase tracking-tight" style={{ color: author.style?.color, fontSize: author.style?.fontSize, fontWeight: author.style?.fontWeight }}>
+                  {author.ign}
+                </span>
+              )}
+            </Link>
             <div className="flex gap-0.5">
               {author.badges?.map((bId: string) => {
                 const badge = badges.find(b => b.id === bId);
-                return badge ? <img key={bId} src={badge.imageUrl} className="w-2.5 h-2.5 object-contain" title={badge.name} /> : null;
+                return badge ? (
+                  <div key={bId} className="relative group/badge">
+                    <img src={badge.imageUrl} className="w-2.5 h-2.5 object-contain cursor-help" />
+                    {badge.detail && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 p-2 bg-black/90 text-[8px] text-white rounded-lg opacity-0 group-hover/badge:opacity-100 transition-opacity pointer-events-none z-50 border border-white/10">
+                        {badge.detail}
+                      </div>
+                    )}
+                  </div>
+                ) : null;
               })}
             </div>
             <span className="text-[8px] text-white/20 font-bold uppercase tracking-widest">{formatDistanceToNow(comment.timestamp)} ago</span>
@@ -634,6 +690,11 @@ const CommentItem: React.FC<{
             
             {(isAdmin || user?.uid === comment.userId) && !isEditing && (
               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+                {isAdmin && !comment.parentId && (
+                  <button onClick={handlePin} className={`p-1 rounded transition-all ${comment.isPinned ? 'text-primary bg-primary/10' : 'text-white/20 hover:text-primary'}`}>
+                    <Pin size={8} className={comment.isPinned ? 'fill-primary' : ''} />
+                  </button>
+                )}
                 <button onClick={() => setIsEditing(true)} className="p-1 hover:bg-white/5 rounded text-white/20 hover:text-white"><Edit2 size={8} /></button>
                 <button onClick={handleDelete} className="p-1 hover:bg-red-500/10 rounded text-white/20 hover:text-red-500"><Trash2 size={8} /></button>
               </div>
@@ -667,6 +728,7 @@ const CommentItem: React.FC<{
                     onReply={onReply}
                     onLike={() => handleLike(reply.id, reply.likes)}
                     handleLike={handleLike}
+                    allUsers={allUsers}
                   />
                 ))}
               </motion.div>

@@ -9,13 +9,20 @@ export const BadgeManager: React.FC = () => {
   const { badges } = useFirebase();
   const [newName, setNewName] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [newDetail, setNewDetail] = useState('');
 
   const handleAdd = async () => {
     if (!newName || !newImageUrl) return;
     const newRef = push(ref(db, 'badges'));
-    await set(newRef, { id: newRef.key, name: newName, imageUrl: newImageUrl });
+    await set(newRef, { 
+      id: newRef.key, 
+      name: newName, 
+      imageUrl: newImageUrl,
+      detail: newDetail 
+    });
     setNewName('');
     setNewImageUrl('');
+    setNewDetail('');
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +81,16 @@ export const BadgeManager: React.FC = () => {
               </div>
             </div>
           </div>
+          <div className="flex-1 space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Badge Detail (Tooltip)</label>
+            <input
+              type="text"
+              placeholder="e.g. Top 10 in Season 1"
+              value={newDetail}
+              onChange={e => setNewDetail(e.target.value)}
+              className="w-full bg-secondary border border-white/10 rounded-2xl p-4 focus:border-primary transition-all outline-none"
+            />
+          </div>
           <button onClick={handleAdd} className="btn-primary h-[58px] px-8 flex items-center gap-2 shadow-xl shadow-primary/20">
             <Plus size={20} /> Add Badge
           </button>
@@ -85,7 +102,10 @@ export const BadgeManager: React.FC = () => {
           <div key={badge.id} className="bg-secondary p-4 rounded-xl border border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img src={badge.imageUrl} className="w-10 h-10 object-contain" />
-              <span className="font-medium">{badge.name}</span>
+              <div className="flex flex-col">
+                <span className="font-medium">{badge.name}</span>
+                {badge.detail && <span className="text-[10px] text-white/40">{badge.detail}</span>}
+              </div>
             </div>
             <button onClick={() => handleDelete(badge.id)} className="text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-all">
               <Trash2 size={18} />
