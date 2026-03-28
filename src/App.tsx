@@ -12,6 +12,7 @@ import { TournamentList } from './components/TournamentList';
 import { TournamentDetail } from './components/TournamentDetail';
 import { Profile } from './components/Profile';
 import { AdminPanel } from './components/AdminPanel';
+import { UserEdit } from './components/UserEdit';
 import { Auth } from './components/Auth';
 import { ProfileCompletionModal } from './components/ProfileCompletionModal';
 import { HelpCenter } from './components/HelpCenter';
@@ -272,13 +273,14 @@ export default function App() {
         <div className="min-h-screen flex flex-col">
           <Navigation />
           <HelpCenter />
-          <main className="flex-1 max-w-7xl mx-auto px-4 w-full">
+          <main className="flex-1 max-w-7xl mx-auto px-4 w-full pt-24 sm:pt-32">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/tournaments" element={<TournamentList />} />
               <Route path="/tournament/:id" element={<TournamentDetail />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/admin/user/:uid" element={<UserEdit />} />
               <Route path="/login" element={<Auth mode="login" />} />
               <Route path="/signup" element={<Auth mode="signup" />} />
             </Routes>

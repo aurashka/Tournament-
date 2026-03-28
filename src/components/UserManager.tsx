@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFirebase } from '../lib/FirebaseContext';
 import { ref, onValue, update } from 'firebase/database';
 import { db } from '../lib/firebase';
-import { UserProfile, Badge } from '../types';
-import { Search, Shield, Ban, UserCheck, Palette, Badge as BadgeIcon } from 'lucide-react';
+import { UserProfile } from '../types';
+import { Search, Shield, Ban, UserCheck, Settings2 } from 'lucide-react';
 
 export const UserManager: React.FC = () => {
+  const navigate = useNavigate();
   const { badges } = useFirebase();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const uRef = ref(db, 'users');
@@ -32,168 +33,94 @@ export const UserManager: React.FC = () => {
     await update(ref(db, `users/${uid}`), { isBanned: !isBanned });
   };
 
-  const handleUpdateStyle = async (uid: string, style: any) => {
-    await update(ref(db, `users/${uid}/style`), style);
-  };
-
-  const handleToggleBadge = async (uid: string, badgeId: string) => {
-    const user = users.find(u => u.uid === uid);
-    const currentBadges = user?.badges || [];
-    const newBadges = currentBadges.includes(badgeId)
-      ? currentBadges.filter(id => id !== badgeId)
-      : [...currentBadges, badgeId];
-    await update(ref(db, `users/${uid}`), { badges: newBadges });
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">User Management</h2>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-black uppercase tracking-tight">User Management</h2>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder="Search players..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="bg-secondary border border-white/10 rounded-lg pl-10 pr-4 py-2 w-64"
+            className="w-full bg-secondary border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-sm font-bold outline-none focus:border-primary"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
         {filteredUsers.map(user => (
-          <div key={user.uid} className="bg-secondary p-6 rounded-xl border border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <img src={user.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} className="w-12 h-12 rounded-full border-2 border-primary/20" />
+          <div key={user.uid} className="bg-secondary p-6 rounded-3xl border border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:bg-white/5 transition-all">
+            <div className="flex items-center gap-6">
+              <div className="relative">
+                <img 
+                  src={user.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} 
+                  className="w-16 h-16 rounded-2xl border-2 border-primary/20 shadow-xl" 
+                />
+                {user.isBanned && (
+                  <div className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-lg shadow-lg">
+                    <Ban size={12} />
+                  </div>
+                )}
+              </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold" style={{ color: user.style?.color, fontSize: user.style?.fontSize, fontWeight: user.style?.fontWeight }}>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-black uppercase tracking-tight" style={{ color: user.style?.color, fontSize: user.style?.fontSize, fontWeight: user.style?.fontWeight }}>
                     {user.ign}
                   </h3>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
                     user.role === 'admin' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
                   }`}>
                     {user.role}
                   </span>
-                  {user.isBanned && <span className="bg-red-500/20 text-red-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Banned</span>}
                 </div>
-                <p className="text-xs text-white/50">{user.email}</p>
-                <div className="flex gap-1 mt-1">
+                <p className="text-xs font-bold text-white/20 uppercase tracking-widest mt-1">{user.email}</p>
+                <div className="flex gap-1.5 mt-3">
                   {user.badges?.map(bId => {
                     const badge = badges.find(b => b.id === bId);
-                    return badge ? <img key={bId} src={badge.imageUrl} className="w-4 h-4 object-contain" title={badge.name} /> : null;
+                    return badge ? (
+                      <div key={bId} className="w-6 h-6 p-1 bg-white/5 rounded-lg border border-white/5">
+                        <img src={badge.imageUrl} className="w-full h-full object-contain" title={badge.name} />
+                      </div>
+                    ) : null;
                   })}
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
-                onClick={() => setEditingUser(editingUser?.uid === user.uid ? null : user)}
-                className="p-2 hover:bg-white/5 rounded-lg text-white/50 hover:text-white"
-                title="Edit Style & Badges"
+                onClick={() => navigate(`/admin/user/${user.uid}`)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-3 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded-2xl transition-all font-bold text-xs uppercase tracking-widest border border-primary/20"
+                title="Edit User Details"
               >
-                <Palette size={20} />
+                <Settings2 size={18} />
+                <span className="sm:hidden">Edit Details</span>
               </button>
               <button
                 onClick={() => handleUpdateRole(user.uid, user.role === 'admin' ? 'user' : 'admin')}
-                className="p-2 hover:bg-white/5 rounded-lg text-white/50 hover:text-white"
-                title="Toggle Admin"
+                className="p-3 hover:bg-white/5 rounded-2xl text-white/20 hover:text-white transition-colors border border-white/10"
+                title="Toggle Admin Role"
               >
                 <Shield size={20} />
               </button>
               <button
                 onClick={() => handleToggleBan(user.uid, !!user.isBanned)}
-                className={`p-2 rounded-lg transition-all ${user.isBanned ? 'bg-red-500 text-white' : 'hover:bg-red-500/20 text-red-500'}`}
-                title={user.isBanned ? 'Unban' : 'Ban'}
+                className={`p-3 rounded-2xl transition-all border ${user.isBanned ? 'bg-red-500 border-red-500 text-white' : 'border-red-500/20 text-red-500 hover:bg-red-500/10'}`}
+                title={user.isBanned ? 'Unban Player' : 'Ban Player'}
               >
                 {user.isBanned ? <UserCheck size={20} /> : <Ban size={20} />}
               </button>
             </div>
           </div>
         ))}
-      </div>
-
-      {editingUser && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-secondary w-full max-w-2xl rounded-2xl border border-white/10 p-8 space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-bold">Customize User: {editingUser.ign}</h3>
-              <button onClick={() => setEditingUser(null)} className="p-2 hover:bg-white/5 rounded-lg"><Ban size={20} /></button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <h4 className="font-bold text-primary flex items-center gap-2"><Palette size={18} /> Name Style</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs text-white/50 mb-1">Color</label>
-                    <input
-                      type="color"
-                      value={editingUser.style?.color || '#ffffff'}
-                      onChange={e => handleUpdateStyle(editingUser.uid, { ...editingUser.style, color: e.target.value })}
-                      className="w-full h-10 bg-background border border-white/10 rounded-lg cursor-pointer"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-white/50 mb-1">Font Size</label>
-                    <select
-                      value={editingUser.style?.fontSize || '16px'}
-                      onChange={e => handleUpdateStyle(editingUser.uid, { ...editingUser.style, fontSize: e.target.value })}
-                      className="w-full bg-background border border-white/10 rounded-lg p-2"
-                    >
-                      <option value="12px">Small</option>
-                      <option value="16px">Normal</option>
-                      <option value="20px">Large</option>
-                      <option value="24px">Extra Large</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-white/50 mb-1">Weight</label>
-                    <select
-                      value={editingUser.style?.fontWeight || 'normal'}
-                      onChange={e => handleUpdateStyle(editingUser.uid, { ...editingUser.style, fontWeight: e.target.value })}
-                      className="w-full bg-background border border-white/10 rounded-lg p-2"
-                    >
-                      <option value="normal">Normal</option>
-                      <option value="bold">Bold</option>
-                      <option value="900">Black</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-bold text-primary flex items-center gap-2"><BadgeIcon size={18} /> Badges</h4>
-                <div className="grid grid-cols-4 gap-2">
-                  {badges.map(badge => (
-                    <button
-                      key={badge.id}
-                      onClick={() => handleToggleBadge(editingUser.uid, badge.id)}
-                      className={`p-2 rounded-lg border transition-all ${
-                        editingUser.badges?.includes(badge.id) ? 'border-primary bg-primary/10' : 'border-white/10 hover:border-white/30'
-                      }`}
-                    >
-                      <img src={badge.imageUrl} className="w-full h-8 object-contain" title={badge.name} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Profile Notice</label>
-              <textarea
-                value={editingUser.notice || ''}
-                onChange={e => update(ref(db, `users/${editingUser.uid}`), { notice: e.target.value })}
-                className="w-full bg-background border border-white/10 rounded-lg p-2 h-20"
-                placeholder="Add a custom notice to this user's profile..."
-              />
-            </div>
+        {filteredUsers.length === 0 && (
+          <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
+            <p className="text-white/20 font-bold uppercase tracking-widest text-sm italic">No players found matching your search</p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

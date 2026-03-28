@@ -16,7 +16,13 @@ export const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState('sections');
 
   if (!isAdmin) {
-    return <div className="p-8 text-center">Access Denied</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <Shield size={48} className="text-red-500/20" />
+        <h2 className="text-2xl font-black uppercase tracking-tight">Access Denied</h2>
+        <p className="text-white/30 text-sm">You do not have administrative privileges.</p>
+      </div>
+    );
   }
 
   const tabs = [
@@ -32,39 +38,47 @@ export const AdminPanel: React.FC = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-background text-text overflow-hidden">
-      {/* Sidebar */}
-      <div className="w-64 bg-secondary border-r border-white/10 flex flex-col">
-        <div className="p-6 border-b border-white/10">
-          <h1 className="text-xl font-bold text-primary">Admin Console</h1>
+    <div className="flex flex-col md:flex-row gap-8 py-8">
+      {/* Sidebar - Mobile Horizontal / Desktop Vertical */}
+      <div className="w-full md:w-64 shrink-0">
+        <div className="sticky top-32 space-y-4">
+          <div className="px-4 mb-6">
+            <h1 className="text-2xl font-black uppercase tracking-tighter italic">Admin<span className="text-primary">Panel</span></h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Management Console</p>
+          </div>
+          
+          <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-4 md:pb-0 no-scrollbar">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-3 px-6 py-4 rounded-2xl transition-all whitespace-nowrap md:w-full ${
+                  activeTab === tab.id 
+                    ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-105' 
+                    : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <tab.icon size={18} />
+                <span className="text-xs font-black uppercase tracking-widest">{tab.label}</span>
+              </button>
+            ))}
+          </nav>
         </div>
-        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                activeTab === tab.id ? 'bg-primary text-black' : 'hover:bg-white/5'
-              }`}
-            >
-              <tab.icon size={20} />
-              <span className="font-medium">{tab.label}</span>
-            </button>
-          ))}
-        </nav>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-8 bg-background">
-        {activeTab === 'sections' && <SectionManager />}
-        {activeTab === 'categories' && <CategoryManager />}
-        {activeTab === 'design' && <DesignManager />}
-        {activeTab === 'fields' && <FieldManager />}
-        {activeTab === 'tournaments' && <TournamentManager />}
-        {activeTab === 'users' && <UserManager />}
-        {activeTab === 'badges' && <BadgeManager />}
-        {activeTab === 'chats' && <ChatManager />}
-        {activeTab === 'notifications' && <NotificationManager />}
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0">
+        <div className="bg-secondary/30 rounded-[2rem] border border-white/5 p-6 md:p-10 backdrop-blur-sm">
+          {activeTab === 'sections' && <SectionManager />}
+          {activeTab === 'categories' && <CategoryManager />}
+          {activeTab === 'design' && <DesignManager />}
+          {activeTab === 'fields' && <FieldManager />}
+          {activeTab === 'tournaments' && <TournamentManager />}
+          {activeTab === 'users' && <UserManager />}
+          {activeTab === 'badges' && <BadgeManager />}
+          {activeTab === 'chats' && <ChatManager />}
+          {activeTab === 'notifications' && <NotificationManager />}
+        </div>
       </div>
     </div>
   );
