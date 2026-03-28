@@ -27,6 +27,7 @@ export interface UserProfile {
   ign: string;
   age: number;
   role: UserRole;
+  gender?: 'male' | 'female';
   profileImage?: string;
   badges?: string[]; // Array of badge IDs
   style?: UserStyle;
@@ -149,6 +150,7 @@ export interface Application {
   id: string;
   tournamentId: string;
   userId: string;
+  userIgn?: string;
   status: 'pending' | 'approved' | 'rejected';
   data: Record<string, any>;
   timestamp: number;

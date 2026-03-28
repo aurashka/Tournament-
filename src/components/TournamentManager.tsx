@@ -127,32 +127,50 @@ export const TournamentManager: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Background Image</label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-2">
                     <input
-                      type="file"
-                      id="bgImage"
-                      className="hidden"
-                      onChange={e => handleImageUpload(e, 'bgImage')}
+                      type="text"
+                      value={formData.bgImage}
+                      onChange={e => setFormData({ ...formData, bgImage: e.target.value })}
+                      className="w-full bg-background border border-white/10 rounded-lg p-2 text-xs"
+                      placeholder="Image URL"
                     />
-                    <label htmlFor="bgImage" className="flex-1 bg-background border border-white/10 rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:bg-white/5">
-                      <ImageIcon size={16} />
-                      <span className="text-xs truncate">{formData.bgImage ? 'Image Uploaded' : 'Upload BG'}</span>
-                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        id="bgImage"
+                        className="hidden"
+                        onChange={e => handleImageUpload(e, 'bgImage')}
+                      />
+                      <label htmlFor="bgImage" className="flex-1 bg-background border border-white/10 rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:bg-white/5">
+                        <ImageIcon size={16} />
+                        <span className="text-xs truncate">{formData.bgImage ? 'Image Selected' : 'Upload BG'}</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Logo</label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-2">
                     <input
-                      type="file"
-                      id="logo"
-                      className="hidden"
-                      onChange={e => handleImageUpload(e, 'logo')}
+                      type="text"
+                      value={formData.logo}
+                      onChange={e => setFormData({ ...formData, logo: e.target.value })}
+                      className="w-full bg-background border border-white/10 rounded-lg p-2 text-xs"
+                      placeholder="Logo URL"
                     />
-                    <label htmlFor="logo" className="flex-1 bg-background border border-white/10 rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:bg-white/5">
-                      <ImageIcon size={16} />
-                      <span className="text-xs truncate">{formData.logo ? 'Image Uploaded' : 'Upload Logo'}</span>
-                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        id="logo"
+                        className="hidden"
+                        onChange={e => handleImageUpload(e, 'logo')}
+                      />
+                      <label htmlFor="logo" className="flex-1 bg-background border border-white/10 rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:bg-white/5">
+                        <ImageIcon size={16} />
+                        <span className="text-xs truncate">{formData.logo ? 'Logo Selected' : 'Upload Logo'}</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>

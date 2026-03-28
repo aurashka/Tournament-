@@ -40,28 +40,42 @@ export const BadgeManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Badge System</h2>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Badge Name"
-            value={newName}
-            onChange={e => setNewName(e.target.value)}
-            className="bg-secondary border border-white/10 rounded-lg p-2"
-          />
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row gap-4 items-end">
+          <div className="flex-1 space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Badge Name</label>
             <input
-              type="file"
-              id="badgeImage"
-              className="hidden"
-              onChange={handleImageUpload}
+              type="text"
+              placeholder="e.g. Pro Player"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              className="w-full bg-secondary border border-white/10 rounded-2xl p-4 focus:border-primary transition-all outline-none"
             />
-            <label htmlFor="badgeImage" className="bg-secondary border border-white/10 rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:bg-white/5">
-              <ImageIcon size={16} />
-              <span className="text-xs truncate">{newImageUrl ? 'Image Uploaded' : 'Upload Badge'}</span>
-            </label>
           </div>
-          <button onClick={handleAdd} className="btn-primary flex items-center gap-2">
-            <Plus size={20} /> Add
+          <div className="flex-1 space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Badge Image URL or Upload</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="https://... (Image Link)"
+                value={newImageUrl}
+                onChange={e => setNewImageUrl(e.target.value)}
+                className="flex-1 bg-secondary border border-white/10 rounded-2xl p-4 focus:border-primary transition-all outline-none text-sm"
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  id="badgeImage"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+                <label htmlFor="badgeImage" className="p-4 bg-secondary border border-white/10 rounded-2xl cursor-pointer hover:bg-white/10 transition-all flex items-center justify-center shrink-0">
+                  <ImageIcon size={20} className="text-primary" />
+                </label>
+              </div>
+            </div>
+          </div>
+          <button onClick={handleAdd} className="btn-primary h-[58px] px-8 flex items-center gap-2 shadow-xl shadow-primary/20">
+            <Plus size={20} /> Add Badge
           </button>
         </div>
       </div>

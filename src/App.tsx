@@ -22,7 +22,7 @@ import { signOut } from 'firebase/auth';
 import { auth as firebaseAuth } from './lib/firebase';
 
 const Navigation: React.FC = () => {
-  const { user, isAdmin, profile, notifications } = useFirebase();
+  const { user, isAdmin, profile, notifications, markNotificationAsRead } = useFirebase();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -31,10 +31,35 @@ const Navigation: React.FC = () => {
 
   const unreadNotifs = notifications.filter(n => !n.read).length;
 
+  React.useEffect(() => {
+    if (isNotifOpen && unreadNotifs > 0) {
+      notifications.forEach(notif => {
+        if (!notif.read) {
+          markNotificationAsRead(notif.id);
+        }
+      });
+    }
+  }, [isNotifOpen, unreadNotifs, notifications, markNotificationAsRead]);
+
   const handleLogout = async () => {
     await signOut(firebaseAuth);
     navigate('/');
     setIsMenuOpen(false);
+  };
+
+  const handleNotifClick = async (notif: any) => {
+    if (!notif.read) {
+      await markNotificationAsRead(notif.id);
+    }
+    
+    if (notif.link) {
+      if (notif.actionType === 'external') {
+        window.open(notif.link, '_blank');
+      } else {
+        navigate(notif.link);
+      }
+    }
+    setIsNotifOpen(false);
   };
 
   const navLinks = [
@@ -102,33 +127,29 @@ const Navigation: React.FC = () => {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-4 w-[calc(100vw-2rem)] sm:w-96 bg-secondary border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-50 origin-top-right"
+                      className="fixed md:absolute right-0 top-0 md:top-auto md:mt-4 w-full h-full md:h-auto md:w-96 bg-background md:bg-secondary border-none md:border md:border-white/10 md:rounded-3xl shadow-2xl overflow-hidden z-[60] md:z-50 origin-top-right"
                     >
-                      <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                        <h4 className="font-black uppercase tracking-tight text-sm">Notifications</h4>
+                      <div className="p-6 md:p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setIsNotifOpen(false)} className="md:hidden p-2 hover:bg-white/10 rounded-xl">
+                            <X size={24} />
+                          </button>
+                          <h4 className="font-black uppercase tracking-tight text-lg md:text-sm">Notifications</h4>
+                        </div>
                         <span className="text-[10px] bg-primary text-black px-2 py-0.5 rounded-full font-bold">{unreadNotifs} New</span>
                       </div>
-                      <div className="max-h-[70vh] overflow-y-auto">
+                      <div className="h-[calc(100vh-80px)] md:max-h-[70vh] overflow-y-auto pb-20 md:pb-0">
                         {notifications.length === 0 ? (
-                          <div className="p-8 text-center text-white/20 italic text-sm">No notifications</div>
+                          <div className="p-12 text-center text-white/20 italic text-sm">No notifications</div>
                         ) : (
                           notifications.sort((a, b) => b.timestamp - a.timestamp).map(notif => (
                             <div 
                               key={notif.id} 
-                              className="p-4 border-b border-white/5 hover:bg-white/5 transition-all cursor-pointer"
-                              onClick={() => {
-                                if (notif.link) {
-                                  if (notif.actionType === 'external') {
-                                    window.open(notif.link, '_blank');
-                                  } else {
-                                    navigate(notif.link);
-                                  }
-                                }
-                                setIsNotifOpen(false);
-                              }}
+                              className={`p-6 md:p-4 border-b border-white/5 hover:bg-white/5 transition-all cursor-pointer ${!notif.read ? 'bg-primary/5 border-l-4 border-l-primary' : ''}`}
+                              onClick={() => handleNotifClick(notif)}
                             >
-                              <div className="flex gap-3">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                              <div className="flex gap-4">
+                                <div className={`w-12 h-12 md:w-10 md:h-10 rounded-xl flex items-center justify-center shrink-0 ${
                                   notif.type === 'success' ? 'bg-green-500/20 text-green-500' :
                                   notif.type === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
                                   notif.type === 'alert' ? 'bg-red-500/20 text-red-500' :
@@ -137,16 +158,16 @@ const Navigation: React.FC = () => {
                                   {notif.imageUrl ? (
                                     <img src={notif.imageUrl} alt="" className="w-full h-full object-cover rounded-xl" />
                                   ) : (
-                                    notif.type === 'success' ? <CheckCircle size={18} /> :
-                                    notif.type === 'warning' ? <AlertTriangle size={18} /> :
-                                    notif.type === 'alert' ? <AlertTriangle size={18} /> :
-                                    <Info size={18} />
+                                    notif.type === 'success' ? <CheckCircle size={20} /> :
+                                    notif.type === 'warning' ? <AlertTriangle size={20} /> :
+                                    notif.type === 'alert' ? <AlertTriangle size={20} /> :
+                                    <Info size={20} />
                                   )}
                                 </div>
                                 <div className="space-y-1 flex-1">
-                                  <h5 className="font-bold text-xs">{notif.title}</h5>
-                                  <p className="text-[10px] text-white/50 leading-relaxed line-clamp-2">{notif.message}</p>
-                                  <span className="text-[8px] text-white/20 font-bold uppercase tracking-widest block mt-1">
+                                  <h5 className={`font-bold ${notif.read ? 'text-white/70' : 'text-white'} text-sm md:text-xs`}>{notif.title}</h5>
+                                  <p className="text-xs md:text-[10px] text-white/50 leading-relaxed line-clamp-3 md:line-clamp-2">{notif.message}</p>
+                                  <span className="text-[10px] md:text-[8px] text-white/20 font-bold uppercase tracking-widest block mt-1">
                                     {new Date(notif.timestamp).toLocaleString()}
                                   </span>
                                 </div>

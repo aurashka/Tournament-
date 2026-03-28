@@ -4,7 +4,7 @@ import { useFirebase } from '../lib/FirebaseContext';
 import { ref, onValue, push, set, update } from 'firebase/database';
 import { db } from '../lib/firebase';
 import { Tournament, Comment, Application } from '../types';
-import { Trophy, Calendar, Users, MessageSquare, Share2, Play, Info, Shield, CheckCircle, XCircle, User, Edit2, Trash2, Heart, Reply, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { Trophy, Calendar, Users, MessageSquare, Share2, Play, Info, Shield, CheckCircle, XCircle, User, Edit2, Trash2, Heart, Reply, ChevronDown, ChevronUp, Search, ThumbsUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -111,22 +111,22 @@ export const TournamentDetail: React.FC = () => {
   return (
     <div className="space-y-8 pb-16">
       {/* Hero Section */}
-      <div className="relative h-[400px] rounded-3xl overflow-hidden">
+      <div className="relative h-[250px] md:h-[400px] rounded-3xl overflow-hidden">
         <img src={tournament.bgImage || 'https://picsum.photos/seed/game/1920/1080'} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-        <div className="absolute bottom-8 left-8 right-8 flex items-end justify-between">
-          <div className="flex items-center gap-6">
-            <img src={tournament.logo || 'https://picsum.photos/seed/logo/200/200'} className="w-24 h-24 rounded-2xl border-4 border-white/10 shadow-2xl" />
+        <div className="absolute bottom-4 md:bottom-8 left-4 md:left-8 right-4 md:right-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="flex items-center gap-4 md:gap-6">
+            <img src={tournament.logo || 'https://picsum.photos/seed/logo/200/200'} className="w-16 h-16 md:w-24 md:h-24 rounded-2xl border-4 border-white/10 shadow-2xl" />
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <span className="px-3 py-1 bg-primary text-black text-[10px] font-black uppercase tracking-widest rounded-full">{tournament.game}</span>
-                <span className="px-3 py-1 bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-full">{tournament.status}</span>
+              <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                <span className="px-2 py-0.5 md:px-3 md:py-1 bg-primary text-black text-[8px] md:text-[10px] font-black uppercase tracking-widest rounded-full">{tournament.game}</span>
+                <span className="px-2 py-0.5 md:px-3 md:py-1 bg-white/10 text-white text-[8px] md:text-[10px] font-black uppercase tracking-widest rounded-full">{tournament.status}</span>
               </div>
-              <h1 className="text-5xl font-black uppercase tracking-tighter italic text-white drop-shadow-lg">{tournament.title}</h1>
+              <h1 className="text-2xl md:text-5xl font-black uppercase tracking-tighter italic text-white drop-shadow-lg">{tournament.title}</h1>
             </div>
           </div>
-          <div className="flex gap-4">
-            <button className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all"><Share2 size={24} /></button>
+          <div className="flex gap-2 md:gap-4">
+            <button className="p-2 md:p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all"><Share2 size={20} /></button>
             {tournament.joinSystem === 'external' ? (
               <a href={tournament.externalLink} target="_blank" className="btn-primary flex items-center gap-2 px-8 py-4 text-lg">
                 Join Now <Play size={20} />
@@ -155,43 +155,43 @@ export const TournamentDetail: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Info & Rules */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6 md:space-y-8">
           {/* Stats Bar */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
             {[
               { label: 'Prize Pool', value: tournament.prize, icon: Trophy },
               { label: 'Entry Fee', value: tournament.entryFee, icon: Shield },
               { label: 'Date', value: new Date(tournament.dateTime).toLocaleDateString(), icon: Calendar },
               { label: 'Players', value: applications.filter(a => a.status === 'approved').length, icon: Users },
             ].map((stat, i) => (
-              <div key={i} className="bg-secondary p-4 rounded-2xl border border-white/5 flex flex-col items-center text-center">
-                <stat.icon className="text-primary mb-2" size={20} />
-                <span className="text-[10px] text-white/30 uppercase font-bold tracking-widest">{stat.label}</span>
-                <span className="text-lg font-black">{stat.value}</span>
+              <div key={i} className="bg-secondary p-3 md:p-4 rounded-2xl border border-white/5 flex flex-col items-center text-center">
+                <stat.icon className="text-primary mb-1 md:mb-2" size={typeof window !== 'undefined' && window.innerWidth < 768 ? 16 : 20} />
+                <span className="text-[8px] md:text-[10px] text-white/30 uppercase font-bold tracking-widest">{stat.label}</span>
+                <span className="text-sm md:text-lg font-black">{stat.value}</span>
               </div>
             ))}
           </div>
 
           {/* Rules */}
-          <div className="bg-secondary p-8 rounded-3xl border border-white/5 space-y-4">
-            <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-              <Info className="text-primary" /> Rules & Description
+          <div className="bg-secondary p-4 md:p-8 rounded-3xl border border-white/5 space-y-4">
+            <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight flex items-center gap-3">
+              <Info className="text-primary" size={20} /> Rules & Description
             </h2>
-            <div className="prose prose-invert max-w-none text-white/70 whitespace-pre-wrap leading-relaxed">
+            <div className="prose prose-invert max-w-none text-white/70 text-sm md:text-base whitespace-pre-wrap leading-relaxed">
               {tournament.rules}
             </div>
           </div>
 
           {/* Slot Progress Bar */}
           {tournament.totalSlots && (
-            <div className="bg-secondary p-8 rounded-3xl border border-white/5 space-y-4">
+            <div className="bg-secondary p-4 md:p-8 rounded-3xl border border-white/5 space-y-4">
               <div className="flex justify-between items-end mb-2">
-                <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-                  <Users className="text-primary" /> Slots Availability
+                <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight flex items-center gap-3">
+                  <Users className="text-primary" size={20} /> Slots Availability
                 </h2>
                 <div className="text-right">
-                  <span className="text-2xl font-black text-primary">{tournament.filledSlots || 0}</span>
-                  <span className="text-white/30 font-bold"> / {tournament.totalSlots}</span>
+                  <span className="text-xl md:text-2xl font-black text-primary">{tournament.filledSlots || 0}</span>
+                  <span className="text-white/30 font-bold text-sm md:text-base"> / {tournament.totalSlots}</span>
                 </div>
               </div>
               <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-white/10 p-0.5">
@@ -250,24 +250,39 @@ export const TournamentDetail: React.FC = () => {
           {/* Host Info */}
           {tournament.hostId && <HostCard hostId={tournament.hostId} />}
 
-          <div className="bg-secondary p-8 rounded-3xl border border-white/5 space-y-6">
-            <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
+          <div className="bg-secondary p-6 md:p-8 rounded-3xl border border-white/5 space-y-4">
+            <h2 className="text-lg md:text-xl font-black uppercase tracking-tight flex items-center gap-3">
               <Users className="text-primary" /> Participants
             </h2>
             <div className="space-y-4">
-              {applications.filter(a => a.status === 'approved').slice(0, 5).map(app => (
-                <ParticipantItem key={app.id} userId={app.userId} />
-              ))}
-              {applications.filter(a => a.status === 'approved').length > 5 && (
+              <div className="flex items-center -space-x-3 overflow-hidden">
+                {applications.filter(a => a.status === 'approved').slice(0, 6).map((app, i) => (
+                  <img 
+                    key={app.id}
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${app.userId}`} 
+                    className="inline-block h-10 w-10 rounded-full ring-2 ring-secondary object-cover"
+                    title={app.userIgn}
+                  />
+                ))}
+                {applications.filter(a => a.status === 'approved').length > 6 && (
+                  <button 
+                    onClick={() => setShowAllParticipants(true)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-2 ring-secondary text-[10px] font-bold text-primary hover:bg-white/10 transition-all"
+                  >
+                    +{applications.filter(a => a.status === 'approved').length - 6}
+                  </button>
+                )}
+              </div>
+              
+              {applications.filter(a => a.status === 'approved').length > 0 ? (
                 <button 
                   onClick={() => setShowAllParticipants(true)}
-                  className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-black uppercase tracking-widest text-primary transition-all"
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-all"
                 >
-                  View All {applications.filter(a => a.status === 'approved').length} Members
+                  <Users size={12} /> View Full Member List
                 </button>
-              )}
-              {applications.filter(a => a.status === 'approved').length === 0 && (
-                <p className="text-center text-white/30 py-8 text-sm italic">No participants yet</p>
+              ) : (
+                <p className="text-center text-white/30 py-4 text-xs italic">No participants yet</p>
               )}
             </div>
           </div>
@@ -275,10 +290,10 @@ export const TournamentDetail: React.FC = () => {
       </div>
 
       {/* Discussion Section at Bottom */}
-      <div className="bg-secondary p-8 md:p-12 rounded-[3rem] border border-white/5 space-y-10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <h2 className="text-4xl font-black uppercase tracking-tighter italic flex items-center gap-4">
-            <MessageSquare className="text-primary w-10 h-10" /> Community <span className="text-primary">Chat</span>
+      <div className="bg-secondary p-4 md:p-12 rounded-[2rem] md:rounded-[3rem] border border-white/5 space-y-6 md:space-y-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+          <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tighter italic flex items-center gap-3 md:gap-4">
+            <MessageSquare className="text-primary w-6 h-6 md:w-10 md:h-10" /> Community <span className="text-primary">Chat</span>
           </h2>
           
           <div className="flex items-center gap-2 bg-background/50 p-1 rounded-2xl border border-white/5">
@@ -298,9 +313,9 @@ export const TournamentDetail: React.FC = () => {
 
         <div className="space-y-8">
           {/* Comment Input */}
-          <div className="flex gap-6 bg-white/5 p-6 rounded-[2rem] border border-white/5 relative">
-            <img src={profile?.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} className="w-12 h-12 rounded-2xl border-2 border-primary/20" />
-            <div className="flex-1 space-y-4">
+          <div className="flex gap-3 md:gap-6 bg-white/5 p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-white/5 relative">
+            <img src={profile?.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl border-2 border-primary/20" />
+            <div className="flex-1 space-y-3 md:space-y-4">
               <div className="relative">
                 <textarea
                   value={newComment}
@@ -316,7 +331,7 @@ export const TournamentDetail: React.FC = () => {
                     }
                   }}
                   placeholder={replyTo ? "Write a reply..." : "Join the discussion..."}
-                  className="w-full bg-background/50 border border-white/10 rounded-2xl p-4 h-32 focus:border-primary transition-all outline-none text-sm resize-none"
+                  className="w-full bg-background/50 border border-white/10 rounded-xl md:rounded-2xl p-3 md:p-4 h-24 md:h-32 focus:border-primary transition-all outline-none text-xs md:text-sm resize-none"
                 />
                 
                 {/* Mention List Dropdown */}
@@ -521,7 +536,7 @@ const CommentItem: React.FC<{
   const [author, setAuthor] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
-  const [showReplies, setShowReplies] = useState(true);
+  const [showReplies, setShowReplies] = useState(false);
   const { badges, profile, user } = useFirebase();
   const isAdmin = profile?.role === 'admin';
   const isLiked = user && comment.likes?.[user.uid];
@@ -555,8 +570,8 @@ const CommentItem: React.FC<{
         return (
           <Link 
             key={i} 
-            to={`/profile/${ign}`} // Assuming profile search by IGN or just link to a search
-            className="text-primary font-black hover:underline transition-all"
+            to={`/profile/${ign}`}
+            className="text-primary font-bold hover:underline transition-all"
           >
             {part}
           </Link>
@@ -567,101 +582,98 @@ const CommentItem: React.FC<{
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-4 group relative">
-        <img src={author.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.uid}`} className="w-12 h-12 rounded-2xl border-2 border-white/5 shadow-lg" />
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="font-black text-sm uppercase tracking-tight" style={{ color: author.style?.color, fontSize: author.style?.fontSize, fontWeight: author.style?.fontWeight }}>
-                {author.ign}
-              </span>
-              <div className="flex gap-1">
-                {author.badges?.map((bId: string) => {
-                  const badge = badges.find(b => b.id === bId);
-                  return badge ? <img key={bId} src={badge.imageUrl} className="w-4 h-4 object-contain" title={badge.name} /> : null;
-                })}
-              </div>
-              <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{formatDistanceToNow(comment.timestamp)} ago</span>
+    <div className="space-y-2">
+      <div className="flex gap-2 group relative">
+        <img src={author.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.uid}`} className="w-8 h-8 rounded-full border border-white/5 shadow-md shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="font-bold text-[11px] uppercase tracking-tight" style={{ color: author.style?.color, fontSize: author.style?.fontSize, fontWeight: author.style?.fontWeight }}>
+              {author.ign}
+            </span>
+            <div className="flex gap-0.5">
+              {author.badges?.map((bId: string) => {
+                const badge = badges.find(b => b.id === bId);
+                return badge ? <img key={bId} src={badge.imageUrl} className="w-2.5 h-2.5 object-contain" title={badge.name} /> : null;
+              })}
             </div>
-            
-            <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              {isAdmin && (
-                <>
-                  <button onClick={() => setIsEditing(!isEditing)} className="p-1.5 hover:bg-white/5 rounded-lg text-white/40 hover:text-white"><Edit2 size={14} /></button>
-                  <button onClick={handleDelete} className="p-1.5 hover:bg-red-500/10 rounded-lg text-white/40 hover:text-red-500"><Trash2 size={14} /></button>
-                </>
-              )}
-            </div>
+            <span className="text-[8px] text-white/20 font-bold uppercase tracking-widest">{formatDistanceToNow(comment.timestamp)} ago</span>
           </div>
 
           {isEditing ? (
-            <div className="space-y-2 mt-2">
+            <div className="space-y-2 mt-1">
               <textarea
                 value={editText}
                 onChange={e => setEditText(e.target.value)}
-                className="w-full bg-background border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-primary"
+                className="w-full bg-background/50 border border-white/10 rounded-xl p-2 text-[11px] outline-none focus:border-primary transition-all resize-none h-16"
               />
               <div className="flex justify-end gap-2">
-                <button onClick={() => setIsEditing(false)} className="text-[10px] font-black uppercase tracking-widest px-3 py-1 text-white/40">Cancel</button>
-                <button onClick={handleUpdate} className="text-[10px] font-black uppercase tracking-widest px-4 py-1 bg-primary text-black rounded-lg">Save Changes</button>
+                <button onClick={() => setIsEditing(false)} className="px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-white/30">Cancel</button>
+                <button onClick={handleUpdate} className="px-2 py-1 bg-primary text-black rounded-lg text-[9px] font-black uppercase tracking-widest">Save</button>
               </div>
             </div>
           ) : (
-            <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-              <p className="text-sm text-white/80 leading-relaxed">{renderText(comment.text)}</p>
+            <div className="text-[11px] text-white/80 leading-snug break-words">
+              {renderText(comment.text)}
             </div>
           )}
 
-          <div className="flex items-center gap-6 pt-1">
+          <div className="flex items-center gap-3 mt-1">
             <button 
               onClick={onLike}
-              className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${isLiked ? 'text-red-500' : 'text-white/30 hover:text-white'}`}
+              className={`flex items-center gap-1 transition-all ${isLiked ? 'text-primary' : 'text-white/30 hover:text-white'}`}
             >
-              <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} />
-              {Object.keys(comment.likes || {}).length} Likes
+              <ThumbsUp size={10} className={isLiked ? 'fill-primary' : ''} />
+              <span className="text-[9px] font-bold">{Object.keys(comment.likes || {}).length || ''}</span>
             </button>
             <button 
               onClick={onReply}
-              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/30 hover:text-primary transition-all"
+              className="text-[9px] font-bold text-white/30 hover:text-white uppercase tracking-widest"
             >
-              <Reply size={14} />
               Reply
             </button>
-            {replies.length > 0 && (
-              <button 
-                onClick={() => setShowReplies(!showReplies)}
-                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/60 hover:text-primary transition-all"
-              >
-                {showReplies ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                {replies.length} Replies
-              </button>
+            
+            {(isAdmin || user?.uid === comment.userId) && !isEditing && (
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
+                <button onClick={() => setIsEditing(true)} className="p-1 hover:bg-white/5 rounded text-white/20 hover:text-white"><Edit2 size={8} /></button>
+                <button onClick={handleDelete} className="p-1 hover:bg-red-500/10 rounded text-white/20 hover:text-red-500"><Trash2 size={8} /></button>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Nested Replies */}
-      <AnimatePresence>
-        {showReplies && replies.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="ml-12 pl-6 border-l-2 border-white/5 space-y-6 overflow-hidden"
+      {replies.length > 0 && (
+        <div className="ml-8 space-y-2 border-l border-white/5 pl-3">
+          <button 
+            onClick={() => setShowReplies(!showReplies)}
+            className="flex items-center gap-2 text-[9px] font-bold text-primary uppercase tracking-widest"
           >
-            {replies.map(reply => (
-              <CommentItem 
-                key={reply.id} 
-                comment={reply} 
-                onReply={onReply}
-                onLike={() => handleLike(reply.id, reply.likes)}
-                handleLike={handleLike}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {showReplies ? <ChevronUp size={8} /> : <ChevronDown size={8} />}
+            {showReplies ? 'Hide' : `Show ${replies.length}`} Replies
+          </button>
+          
+          <AnimatePresence>
+            {showReplies && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-3 overflow-hidden"
+              >
+                {replies.map(reply => (
+                  <CommentItem 
+                    key={reply.id} 
+                    comment={reply} 
+                    onReply={onReply}
+                    onLike={() => handleLike(reply.id, reply.likes)}
+                    handleLike={handleLike}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };
@@ -715,20 +727,20 @@ const ParticipantItem: React.FC<{ userId: string }> = ({ userId }) => {
   if (!author) return null;
 
   return (
-    <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-primary/20 transition-all">
-      <div className="flex items-center gap-3">
-        <img src={author.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.uid}`} className="w-8 h-8 rounded-full" />
+    <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5 hover:border-primary/20 transition-all">
+      <div className="flex items-center gap-2">
+        <img src={author.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${author.uid}`} className="w-6 h-6 rounded-full" />
         <div>
-          <span className="text-sm font-bold block" style={{ color: author.style?.color }}>{author.ign}</span>
-          <div className="flex gap-1">
+          <span className="text-xs font-bold block leading-none" style={{ color: author.style?.color }}>{author.ign}</span>
+          <div className="flex gap-0.5 mt-0.5">
             {author.badges?.map((bId: string) => {
               const badge = badges.find(b => b.id === bId);
-              return badge ? <img key={bId} src={badge.imageUrl} className="w-3 h-3 object-contain" title={badge.name} /> : null;
+              return badge ? <img key={bId} src={badge.imageUrl} className="w-2.5 h-2.5 object-contain" title={badge.name} /> : null;
             })}
           </div>
         </div>
       </div>
-      <div className="text-[10px] font-black uppercase tracking-widest text-primary/50">Verified</div>
+      <div className="text-[8px] font-black uppercase tracking-widest text-primary/50">Verified</div>
     </div>
   );
 };

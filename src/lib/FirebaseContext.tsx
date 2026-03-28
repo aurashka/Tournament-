@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { ref, onValue, set, get } from 'firebase/database';
+import { ref, onValue, set, get, update } from 'firebase/database';
 import { auth, db } from './firebase';
 import { UserProfile, GlobalConfig, Section, Category, CustomField, Badge, Notification, ChatMessage } from '../types';
 
@@ -17,6 +17,7 @@ interface FirebaseContextType {
   tournaments: any[];
   loading: boolean;
   isAdmin: boolean;
+  markNotificationAsRead: (id: string) => Promise<void>;
 }
 
 const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined);
@@ -138,6 +139,10 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const isAdmin = profile?.role === 'admin';
 
+  const markNotificationAsRead = async (id: string) => {
+    await update(ref(db, `notifications/${id}`), { read: true });
+  };
+
   return (
     <FirebaseContext.Provider value={{ 
       user, 
@@ -151,7 +156,8 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       chatMessages, 
       tournaments,
       loading, 
-      isAdmin 
+      isAdmin,
+      markNotificationAsRead
     }}>
       {children}
     </FirebaseContext.Provider>

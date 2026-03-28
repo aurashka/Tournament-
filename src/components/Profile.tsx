@@ -3,10 +3,15 @@ import { useFirebase } from '../lib/FirebaseContext';
 import { ref, update, onValue } from 'firebase/database';
 import { db, auth as firebaseAuth } from '../lib/firebase';
 import { UserProfile, Badge, Tournament, Application } from '../types';
-import { Trophy, Shield, Play, Settings, Edit2, LogOut, Badge as BadgeIcon, Info } from 'lucide-react';
+import { Trophy, Shield, Play, Settings, Edit2, LogOut, Badge as BadgeIcon, Info, Mars, Venus, Check, Image as ImageIcon } from 'lucide-react';
 import { uploadImage } from '../lib/utils';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+
+const PRESET_AVATARS = {
+  male: ['Felix', 'Max', 'Oliver', 'James', 'Leo'],
+  female: ['Aneka', 'Sasha', 'Mia', 'Luna', 'Zoe']
+};
 
 export const Profile: React.FC = () => {
   const { user, profile, badges } = useFirebase();
@@ -25,13 +30,8 @@ export const Profile: React.FC = () => {
     onValue(aRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const apps: Application[] = [];
-        Object.values(data).forEach((tournamentApps: any) => {
-          Object.values(tournamentApps).forEach((app: any) => {
-            if (app.userId === user.uid) apps.push(app);
-          });
-        });
-        setUserApplications(apps);
+        const apps: Application[] = Object.values(data) as Application[];
+        setUserApplications(apps.filter(app => app.userId === user.uid));
       }
     });
 
@@ -39,7 +39,7 @@ export const Profile: React.FC = () => {
     const tRef = ref(db, 'tournaments');
     onValue(tRef, (snapshot) => {
       const data = snapshot.val();
-      setTournaments(data ? Object.values(data) : []);
+      setTournaments(data ? Object.values(data) as Tournament[] : []);
     });
   }, [user, profile]);
 
@@ -92,6 +92,11 @@ export const Profile: React.FC = () => {
               <h1 className="text-4xl font-black uppercase tracking-tighter italic" style={{ color: profile.style?.color, fontSize: profile.style?.fontSize, fontWeight: profile.style?.fontWeight }}>
                 {profile.ign}
               </h1>
+              {profile.gender && (
+                <div className={`p-2 rounded-full ${profile.gender === 'male' ? 'bg-blue-500/20 text-blue-500' : 'bg-pink-500/20 text-pink-500'}`}>
+                  {profile.gender === 'male' ? <Mars size={20} /> : <Venus size={20} />}
+                </div>
+              )}
               <div className="flex gap-2">
                 {profile.badges?.map(bId => {
                   const badge = badges.find(b => b.id === bId);
@@ -141,7 +146,7 @@ export const Profile: React.FC = () => {
       {isEditing && (
         <div className="bg-secondary p-8 rounded-3xl border border-white/5 space-y-6">
           <h2 className="text-2xl font-black uppercase tracking-tight">Edit Profile</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium mb-1">In-game Name</label>
               <input
@@ -159,6 +164,47 @@ export const Profile: React.FC = () => {
                 onChange={e => setFormData({ ...formData, age: parseInt(e.target.value) })}
                 className="w-full bg-background border border-white/10 rounded-xl p-3"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Gender</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setFormData({ ...formData, gender: 'male' })}
+                  className={`py-3 rounded-xl border font-bold uppercase tracking-widest text-[10px] transition-all ${formData.gender === 'male' ? 'bg-primary text-black border-primary' : 'bg-background border-white/10 text-white/30'}`}
+                >
+                  Male
+                </button>
+                <button
+                  onClick={() => setFormData({ ...formData, gender: 'female' })}
+                  className={`py-3 rounded-xl border font-bold uppercase tracking-widest text-[10px] transition-all ${formData.gender === 'female' ? 'bg-primary text-black border-primary' : 'bg-background border-white/10 text-white/30'}`}
+                >
+                  Female
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block text-sm font-medium">Select Avatar</label>
+            <div className="grid grid-cols-5 gap-4">
+              {PRESET_AVATARS[formData.gender || 'male'].map(seed => {
+                const url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
+                const isSelected = formData.profileImage === url;
+                return (
+                  <button
+                    key={seed}
+                    onClick={() => setFormData({ ...formData, profileImage: url })}
+                    className={`relative rounded-2xl overflow-hidden border-2 transition-all ${isSelected ? 'border-primary scale-105' : 'border-white/5 hover:border-white/20'}`}
+                  >
+                    <img src={url} className="w-full aspect-square object-cover" />
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <Check className="text-primary" size={24} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div className="flex justify-end">

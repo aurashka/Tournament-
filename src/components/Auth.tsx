@@ -12,6 +12,7 @@ export const Auth: React.FC<{ mode: 'login' | 'signup' }> = ({ mode }) => {
     password: '',
     ign: '',
     age: '',
+    gender: 'male' as 'male' | 'female',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,12 +30,19 @@ export const Auth: React.FC<{ mode: 'login' | 'signup' }> = ({ mode }) => {
         // Bootstrap first admin
         const isAdmin = formData.email === 'smartharshitmaan@gmail.com';
         
+        // Default avatar based on gender
+        const defaultAvatar = formData.gender === 'male' 
+          ? `https://api.dicebear.com/7.x/avataaars/svg?seed=Felix`
+          : `https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka`;
+
         await set(ref(db, `users/${user.uid}`), {
           uid: user.uid,
           email: formData.email,
           ign: formData.ign,
           age: parseInt(formData.age),
+          gender: formData.gender,
           role: isAdmin ? 'admin' : 'user',
+          profileImage: defaultAvatar,
           stats: { played: 0, won: 0, live: 0 },
           badges: [],
           style: { color: '#ffffff', fontSize: '16px', fontWeight: 'normal' },
@@ -91,6 +99,22 @@ export const Auth: React.FC<{ mode: 'login' | 'signup' }> = ({ mode }) => {
                   onChange={e => setFormData({ ...formData, age: e.target.value })}
                   className="w-full bg-background border border-white/10 rounded-xl pl-12 pr-4 py-4 focus:border-primary transition-all outline-none"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, gender: 'male' })}
+                  className={`py-4 rounded-xl border font-bold uppercase tracking-widest text-xs transition-all ${formData.gender === 'male' ? 'bg-primary text-black border-primary' : 'bg-background border-white/10 text-white/30 hover:border-white/20'}`}
+                >
+                  Male
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, gender: 'female' })}
+                  className={`py-4 rounded-xl border font-bold uppercase tracking-widest text-xs transition-all ${formData.gender === 'female' ? 'bg-primary text-black border-primary' : 'bg-background border-white/10 text-white/30 hover:border-white/20'}`}
+                >
+                  Female
+                </button>
               </div>
             </>
           )}
